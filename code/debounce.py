@@ -17,7 +17,6 @@ def on_pressed(timer):
     global button_white_pressed
     button_white_pressed=True
     
-
 def on_pressed2(timer):
     print('button_red_pressed')
     global button_red_pressed
@@ -83,45 +82,3 @@ while True:
 
     button_red_pressed = False
     button_white_pressed = False
-#    print (f"light_white:{} light_red:{} button_white_pressed:{} button_red_pressed:{}",,light_red,button_white_pressed,button_red_pressed )
-
-
-
-#    elif light_red = 0 and light_white > 0
-    
-#    elif button_white_pressed == True:
-#        print('MAIN button_white_pressed ')
-#        button_white_pressed=False
-        
-
-while True:
-    
-    if light_red == 0:
-        if light_white == 0:
-            led.value(1)
-            light_white = 1
-            print('light on')
-        elif light_white == 1:
-            led.value(0)
-            light_white = 0
-            print('light off')
-    
-    light_red
-    if light_white == 0:
-        if light_red == 0:
-            led.value(1)
-            light_red = 1
-            print('light on')
-        elif light_red == 1:
-            led.value(0)
-            light_red = 0
-            print('light off')
-    elif light_white == 1:
-        if light_red == 0:
-            print('red over white')
-            light_red == 1
-#        elif light_red == 1:
-#            led.value(0)
-#            light_white = 0
-#            light_red = 0
-
