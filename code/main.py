@@ -229,7 +229,7 @@ while True:
 
     if statechange>0:
         print (f"light_white:{light_white} light_red:{light_red} button_white_pressed:{button_white_pressed} button_red_pressed:{button_red_pressed} LED_brightness:{LED_brightness}")
-        s1='{\n"button_red":"'     +  str(light_red) + '",\n'
+        s1='{\n"button_red":"'  +  str(light_red) + '",\n'
         s2='"button_white":"'   +  str(light_white) + '",\n'
         s3='"LED_brightness":"' +  str(LED_brightness) + '",\n'
         s4='"LED_roof":"'       +  "NA" + '"\n}\n'
