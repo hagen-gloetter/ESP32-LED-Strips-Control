@@ -37,8 +37,8 @@ timer1 = Timer(0)
 timer2 = Timer(1)
 
 # Setup the button input pin with a pull-up resistor.
-button1 = Pin(35, Pin.IN, Pin.PULL_UP)
-button2 = Pin(34, Pin.IN, Pin.PULL_UP)
+button1 = Pin(39, Pin.IN, Pin.PULL_UP)
+button2 = Pin(35, Pin.IN, Pin.PULL_UP)
 
 # Register an interrupt on rising button input.
 button1.irq(debounce1, Pin.IRQ_RISING)
