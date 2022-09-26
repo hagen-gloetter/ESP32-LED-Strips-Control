@@ -5,8 +5,8 @@ import time
 light_white = 0 #white
 light_red = 0 #red
 button_white_pressed=False
-button_white_status=True
 button_red_pressed=False
+button_white_status=True
 button_red_pressed=False
 LED_brightness=255
 
@@ -25,27 +25,29 @@ def on_pressed2(timer):
 def debounce1(pin):
 #    print (pin)
     # Start or replace a timer for 200ms, and trigger on_pressed.
-    timer1.init(mode=Timer.ONE_SHOT, period=20, callback=on_pressed)
+    timer1.init(mode=Timer.ONE_SHOT, period=200, callback=on_pressed)
 
 def debounce2(pin):
 #    print (pin)
     # Start or replace a timer for 200ms, and trigger on_pressed.
-    timer2.init(mode=Timer.ONE_SHOT, period=20, callback=on_pressed2)
+    timer2.init(mode=Timer.ONE_SHOT, period=200, callback=on_pressed2)
 
 # Register a new hardware timer.
 timer1 = Timer(0)
 timer2 = Timer(1)
 
 # Setup the button input pin with a pull-up resistor.
-button1 = Pin(35, Pin.IN, Pin.PULL_DOWN)
-button2 = Pin(34, Pin.IN, Pin.PULL_DOWN)
+button1 = Pin(39, Pin.IN, Pin.PULL_UP)
+button2 = Pin(35, Pin.IN, Pin.PULL_UP)
 
 # Register an interrupt on rising button input.
 button1.irq(debounce1, Pin.IRQ_RISING)
 button2.irq(debounce2, Pin.IRQ_RISING)
 
+
+
 while True:
-    time.sleep(.2)
+    time.sleep(.5)
     statechange=0
     # Drehregler abfragen
     

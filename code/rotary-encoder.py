@@ -6,13 +6,13 @@ from time import sleep_ms
 from rotary_irq_esp import RotaryIRQ
 
 r = RotaryIRQ(
-    pin_num_clk=32,
-    pin_num_dt=33,
+    pin_num_clk=33,
+    pin_num_dt=34,
     min_val=1,
     max_val=255,
     reverse=True,
     range_mode=RotaryIRQ.RANGE_WRAP)
-sw = Pin(34, Pin.IN)
+sw = Pin(14, Pin.IN)
 val_old = r.value()
 isRotaryEncoder = True
 print ("runnin")
