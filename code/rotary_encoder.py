@@ -15,8 +15,11 @@ r = RotaryIRQ(
 sw = Pin(14, Pin.IN)
 val_old = r.value()
 isRotaryEncoder = True
-print ("runnin")
-while True:
+print ("rotary_encoder loaded")
+
+def get_rotary_encoder():
+    global isRotaryEncoder
+    global sw
     if sw.value() == 1:
         isRotaryEncoder = not isRotaryEncoder
         if isRotaryEncoder == True:
@@ -25,9 +28,9 @@ while True:
             print('Rotary Encoder is now disabled.')
 
     if isRotaryEncoder == True:
+        global val_old
         val_new = r.value()
         if val_old != val_new:
             val_old = val_new
             print('result = {}'.format(val_new))
-
-    sleep_ms(200)
+            return val_new
