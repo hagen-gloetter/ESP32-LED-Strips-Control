@@ -77,6 +77,8 @@ class RotaryIRQ(Rotary):
                 print('Rotary Encoder is now enabled.')
             else:
                 print('Rotary Encoder is now disabled.')
+        isRotaryEncoder == True # schalter ist nervig zum testen
+        
         if isRotaryEncoder == True:
 #            global val_old
             val_new = self.value()
