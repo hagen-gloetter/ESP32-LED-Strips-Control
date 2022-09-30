@@ -14,11 +14,6 @@ print("main.py")
 #from web_html import web_page
 #from web_html import web_css
 
-
-webpage = web_page()
-#print (webpage)
-webcss = web_css()
-#print (webcss)
 led = machine.Pin(2, machine.Pin.OUT)
 Hue = 256
 ColorR = 0
@@ -35,8 +30,17 @@ sw = Pin(14, Pin.IN)
 val_old = r.value()
 isRotaryEncoder = True
 
-
-
+JSONdata="""
+{
+    "button_red": "-x-",
+    "button_white": "-x-",
+    "LED_brightness": "-x-",
+    "LED_roof": "-x-"
+}
+"""
+led.value(1)
+sleep_ms(200)
+led.value(0)
 
 def strips_update_hue():
     if Light_A == "ON":
@@ -47,6 +51,17 @@ def strips_update_hue():
         Strip1.SetColor(Hue, 0, 0)
         Strip2.SetColor(Hue, 0, 0)
         print(f"Hue Red Changed: {Hue}")
+    set_JSON(Light_A,Light_B)
+        
+def set_JSON(status1, status2):
+    global JSONdata
+    global Hue
+    s1='{\n"button_red":"'  +  str(Light_B) + '",\n'
+    s2='"button_white":"'   +  str(Light_A) + '",\n'
+#    s3='"LED_brightness":"' +  " R="+ str(ColorR) + " G="+ str(ColorG) + " B="+ str(ColorB) +'",\n'
+    s3='"LED_brightness":"' +  str(Hue) + '",\n'
+    s4='"LED_roof":"'       +  "NA" + '"\n}\n'
+    JSONdata=s1+s2+s3+s4
 
 def button_a_switch():
     global Light_A
@@ -61,6 +76,7 @@ def button_a_switch():
         print("White OFF")
         Strip1.SetColor(0, 0, 0)
         Strip2.SetColor(0, 0, 0)
+    set_JSON(Light_A,Light_B)
 
 def button_b_switch():
     global Light_A
@@ -81,6 +97,7 @@ def button_b_switch():
         print("Red OFF")
         Strip1.SetColor(0, 0, 0)
         Strip2.SetColor(0, 0, 0)
+    set_JSON(Light_A,Light_B)
 
 
 def button_a_callback(pin):
@@ -134,9 +151,13 @@ button_a = Button(pin=Pin(BUTTON_A_PIN, mode=Pin.IN, pull=Pin.PULL_UP),
 button_b = Button(pin=Pin(BUTTON_B_PIN, mode=Pin.IN, pull=Pin.PULL_UP),
                   trigger=Pin.IRQ_RISING, callback=button_b_callback)
 
+# button part end =========================================================================================================
+
+
 def thread_webserver(delay, name):
     time.sleep(delay) # slowstart webserver
     while True:
+        sleep_ms(233)
         print(f'Running thread {name}' )
         # print webpage =========================================================================================================
         conn, addr = s.accept()
@@ -153,10 +174,19 @@ def thread_webserver(delay, name):
             #print('LED OFF')
             led.value(0)
         jsonrequest = request.find('data.json')
+        cssrequest = request.find('web.css')
         if jsonrequest > 4: 
             response = JSONdata
             conn.send('HTTP/1.1 200 OK\n')
             conn.send('Content-Type: application/json\n')
+            conn.send('Connection: close\n\n')
+            conn.sendall(response)
+            conn.close()
+        
+        elif cssrequest > 4: 
+            response = web_css()
+            conn.send('HTTP/1.1 200 OK\n')
+            conn.send('Content-Type: text/css\n')
             conn.send('Connection: close\n\n')
             conn.sendall(response)
             conn.close()
@@ -169,11 +199,23 @@ def thread_webserver(delay, name):
             conn.close()
 
 
-#_thread.start_new_thread(thread_webserver,( 4, "webserver"))
-thread_webserver(4,"hallo")
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind(('', 80))
+s.listen(5)
 
+Strip1.SetColor(0,0,0)
+Strip2.SetColor(0,0,0)
+strips_update_hue()
+set_JSON(Light_A,Light_B)
+
+_thread.start_new_thread(thread_webserver,( 4, "webserver"))
+#debug no thread
+#thread_webserver(4,"webserver")
+led.value(1)
+toggle=1
+cnt=0
 while True:
-    #    led.value(1)
+    led.value(toggle)
     #    sleep_ms(200)
     #    led.value(0)
 
@@ -193,6 +235,15 @@ while True:
         print(f"Hue={Hue}")
         strips_update_hue()
     sleep_ms(200)
+    cnt +=1
+    if cnt == 5:
+        print ("main loop")
+        cnt=0
+        if toggle == 0:
+            toggle = 1
+        else:
+            toggle = 0
+    
 #    print ("colorwheel")
 #    Strip1.SetColor(255,0,0)
 #    sleep_ms(1000)
@@ -202,4 +253,5 @@ while True:
 #    sleep_ms(1000)
 #    Strip1.SetColor(255,255,255)
 #    sleep_ms(1000)
+
 
