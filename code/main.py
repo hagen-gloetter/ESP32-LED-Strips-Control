@@ -9,6 +9,8 @@ from machine import Pin
 import _thread
 import time
 import machine
+import gc
+
 print("main.py")
 
 #from web_html import web_page
@@ -198,17 +200,20 @@ def thread_webserver(delay, name):
             conn.sendall(response)
             conn.close()
 
-
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind(('', 80))
-s.listen(5)
+try:
+    import usocket as socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(('', 80))
+    s.listen(5)
+except:
+    import socket
 
 Strip1.SetColor(0,0,0)
 Strip2.SetColor(0,0,0)
 strips_update_hue()
 set_JSON(Light_A,Light_B)
 
-_thread.start_new_thread(thread_webserver,( 4, "webserver"))
+#_thread.start_new_thread(thread_webserver,( 4, "webserver"))
 #debug no thread
 #thread_webserver(4,"webserver")
 led.value(1)
@@ -243,7 +248,8 @@ while True:
             toggle = 1
         else:
             toggle = 0
-    
+            gc.collect()
+
 #    print ("colorwheel")
 #    Strip1.SetColor(255,0,0)
 #    sleep_ms(1000)
