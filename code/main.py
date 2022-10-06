@@ -19,17 +19,16 @@ print("main.py")
 led = machine.Pin(2, machine.Pin.OUT)
 Brightness = 256
 
-ColorRGB=[0,255,0]
+ColorRGB=[0,0,0]
 ColorSollwerte = [0,0,0]
-Fade_speed = 4
 
 Strip1 = LEDStrip(ColorRGB[0], ColorRGB[1], ColorRGB[2], 27, 25, 32)    # TODO  Listen übergeben
 Strip1.SetColor(ColorRGB[0], ColorRGB[1], ColorRGB[2])
 Strip2 = LEDStrip(ColorRGB[0], ColorRGB[1], ColorRGB[2], 17, 21, 22)
 Strip2.SetColor(ColorRGB[0], ColorRGB[1], ColorRGB[2])
 
-r = RotaryIRQ(pin_num_clk=33, pin_num_dt=34, min_val=1, max_val=16,
-              reverse=True, range_mode=RotaryIRQ.RANGE_BOUNDED)
+r = RotaryIRQ(pin_num_clk=33, pin_num_dt=34, min_val=0, max_val=16,
+              reverse=True, range_mode=RotaryIRQ.RANGE_WRAP)
 sw = Pin(14, Pin.IN)
 val_old = r.value()
 isRotaryEncoder = True
@@ -48,9 +47,7 @@ led.value(0)
 
 def strips_update_Brightness():
     global ColorSollwerte
-    global ColorRGB
     global Brightness
-    global Fade_speed
     if Light_W == "ON":
         ColorSollwerte=[Brightness,Brightness,Brightness] # set Brightness to Sollwerte
         print(f"Brightness White Changed: {Brightness}")
@@ -58,21 +55,15 @@ def strips_update_Brightness():
         ColorSollwerte=[Brightness,0,0]
         print(f"Brightness Red Changed: {Brightness}") # set Brightness to Sollwerte
 
-    for i in range(len(ColorRGB)) :
-        #print ("rgb:{} rgb:{}",str(ColorRGB[i]),str(ColorSollwerte[i]))
-        if ColorRGB[i] < ColorSollwerte[i]: # fade in
-            ColorRGB[i] = ColorRGB[i] + Fade_speed
-            if ColorRGB[i] >= ColorSollwerte[i]: # no overshoot
-                ColorRGB[i] = ColorSollwerte[i]
-        elif ColorRGB[i] > ColorSollwerte[i]: # fade out
-            ColorRGB[i] = ColorRGB[i] - Fade_speed
-            if ColorRGB[i] <= ColorSollwerte[i]: # no overshoot
-                ColorRGB[i] = ColorSollwerte[i]
+    for i in range(ColorRGB):
+        if ColorRGB[i] > ColorSollwerte[i]: # fade in
+            ColorRGB[i] += 1
+        elif ColorRGB[i] < ColorSollwerte[i] # fade out
+            ColorRGB[i] -= 1
         else:
             pass # values are equal
-    Strip1.SetColor(ColorRGB[0], ColorRGB[1], ColorRGB[2])
-    # TODO: LIST as Parameter
-    Strip2.SetColor(ColorRGB[0], ColorRGB[1], ColorRGB[2])
+    Strip1.SetColor(ColorRGB[0], ColorRGB[2], ColorRGB[2]) # TODO: LIST as Parameter
+    Strip2.SetColor(ColorRGB[0], ColorRGB[2], ColorRGB[2])
     set_JSON(Light_W,Light_R)
         
 def set_JSON(status1, status2):
@@ -92,10 +83,15 @@ def Button_W_switch():
     if Light_W == "OFF" and Light_R == "OFF":
         Light_W = "ON"
         print("White ON")
+#        Strip1.SetColor(Brightness, Brightness, Brightness)
+#        Strip2.SetColor(Brightness, Brightness, Brightness)
         ColorSollwerte=[Brightness,Brightness,Brightness]
     elif Light_W == "ON" and Light_R == "OFF":
         Light_W = "OFF"
         print("White OFF")
+#        Strip1.SetColor(0, 0, 0)
+#        Strip2.SetColor(0, 0, 0)
+#        ColorSollwerte=[0,0,0]
         ColorSollwerte=[0,0,0]
     set_JSON(Light_W,Light_R)
 
@@ -106,15 +102,21 @@ def Button_R_switch():
     if Light_R == "OFF" and Light_W == "OFF":
         Light_R = "ON"
         print("Red ON")
+#        Strip1.SetColor(Brightness, 0, 0)
+#        Strip2.SetColor(Brightness, 0, 0)
         ColorSollwerte=[Brightness,0,0]
     elif Light_R == "OFF" and Light_W == "ON":
         Light_W = "OFF"
         Light_R = "ON"
         print("Red over White ON")
-        ColorSollwerte=[Brightness,0,0]      
+#        Strip1.SetColor(Brightness, 0, 0)
+#        Strip2.SetColor(Brightness, 0, 0)
+        ColorSollwerte=[0,0,0]      
     else:
         Light_R = "OFF"
         print("Red OFF")
+ #       Strip1.SetColor(0, 0, 0)
+ #       Strip2.SetColor(0, 0, 0)
         ColorSollwerte=[0,0,0]      
     set_JSON(Light_W,Light_R)
 
@@ -135,12 +137,14 @@ def Button_W_callback(pin):
             pass
         Button_W_cnt += 1
 
+
 def Button_R_callback(pin):
     global Button_R_cnt
     global Button_R_Status
     if pin.value() == 1:
-        if Button_R_cnt % 2 == 0:
-            Button_R_cnt = 0
+        Button_R_cnt %= 2
+        if Button_R_cnt == 1:
+            #            Button_R_cnt = 0
             if Button_R_Status == "ON":
                 Button_R_Status = "OFF"
             else:
@@ -152,27 +156,22 @@ def Button_R_callback(pin):
             pass
         Button_R_cnt += 1
 
-#Buttons
+
 Button_W_PIN = const(13)
+Button_R_PIN = const(10)
 Button_W_Status = "OFF"
 Button_W_cnt = 0
-Light_W = "OFF"  # white
-Button_R_PIN = const(10)
 Button_R_Status = "OFF"
 Button_R_cnt = 0
+Light_W = "OFF"  # white
 Light_R = "OFF"  # red
-# init callback function and iterrupts
+
 Button_W = Button(pin=Pin(Button_W_PIN, mode=Pin.IN, pull=Pin.PULL_UP),
                   trigger=Pin.IRQ_RISING, callback=Button_W_callback)
 Button_R = Button(pin=Pin(Button_R_PIN, mode=Pin.IN, pull=Pin.PULL_UP),
                   trigger=Pin.IRQ_RISING, callback=Button_R_callback)
 
 # button part end =========================================================================================================
-#Run LED Fading via timer interrupt (smoother than MainLoop)
-timer = machine.Timer(0)
-def LEDfadeTimer(timer):
-    strips_update_Brightness()
-timer.init(period=50, mode=machine.Timer.PERIODIC, callback=LEDfadeTimer)
 
 
 def thread_webserver(delay, name):
@@ -243,21 +242,23 @@ while True:
     #    sleep_ms(200)
     #    led.value(0)
     if Light_W=="ON" or Light_R=="ON": # only if at least one switch is on
-        pass
-    r_value = r.get_rotary_encoder(sw, val_old)
-    if r_value != None: # somehow zero means None ?
-        Brightness = r_value*16  # tranlate 16 steps to 255 color-steps and set limits
-    else:
-        pass
-        #Brightness = 1
-    if Brightness > 256: # no overshoot
-        Brightness = 256
-    if Brightness <= 1: # no overshoot
-        Brightness = 1
-    print(f"Brightness update ={Brightness} = {r_value}")
-    sleep_ms(40)
+        r_value = r.get_rotary_encoder(sw, val_old)
+        if r_value != None:
+            if val_old == 16 and r_value < 2: # cant turn more thab 3 steps in one turn 
+                r_value = 16  # fix overflow
+            if val_old == 0 and r_value > 13:  # cant turn more thab 3 steps in one turn
+                r_value = 0
+            val_old = r_value
+            Brightness = r_value*16  # tranlate 16 steps to 255 color-steps and set limits
+    if Brightness > 256:
+        Brightness = 255
+    if Brightness < 1:
+        Brightness = 0
+    print(f"Brightness update ={Brightness}")
+    strips_update_Brightness()
+    sleep_ms(20)
     cnt +=1
-    if cnt == 50:
+    if cnt == 5:
         print ("main loop")
         cnt=0
         if toggle == 0:
