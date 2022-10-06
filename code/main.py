@@ -244,18 +244,17 @@ while True:
     if Light_W=="ON" or Light_R=="ON": # only if at least one switch is on
         r_value = r.get_rotary_encoder(sw, val_old)
         if r_value != None:
-            if val_old == 16 and r_value == 0:
+            if val_old == 16 and r_value < 2: # cant turn more thab 3 steps in one turn 
                 r_value = 16  # fix overflow
-            if val_old == 0 and r_value == 16:
+            if val_old == 0 and r_value > 13:  # cant turn more thab 3 steps in one turn
                 r_value = 0
             val_old = r_value
-
-        Brightness = r_value*16  # tranlate 16 steps to 255 color-steps and set limits
-        if Brightness > 256:
-            Brightness = 255
-        if Brightness < 1:
-            Brightness = 0
-        print(f"Brightness update ={Brightness}")
+            Brightness = r_value*16  # tranlate 16 steps to 255 color-steps and set limits
+    if Brightness > 256:
+        Brightness = 255
+    if Brightness < 1:
+        Brightness = 0
+    print(f"Brightness update ={Brightness}")
     strips_update_Brightness()
     sleep_ms(20)
     cnt +=1
