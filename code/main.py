@@ -14,14 +14,16 @@ try:
     import usocket as socket
 except:
     import socket
-print("main.py")
+print("main.py") 
 
 from web_html import web_page
 from web_html import web_css
 
 # setup LED
 led = machine.Pin(2, machine.Pin.OUT)
-
+CPU_Speed = machine.freq()
+machine.freq(int(CPU_Speed/2))
+print (f"machine.freq={CPU_Speed}") 
 #Buttons
 Button_W_PIN = const(13)
 Button_R_PIN = const(10)
@@ -34,7 +36,7 @@ Light_R = "OFF"  # red
 
 # setup LED Stripes
 Brightness = 256
-ColorRGB=[0,255,0]
+ColorRGB=[0,0,0]
 ColorSollwerte = [0,0,0]
 Fade_speed = 4
 
@@ -72,16 +74,27 @@ def get_wlankeys():
 #    print (password)
 
 def do_connect(ssid, pwd):
+    global ColorRGB
+    print ("do_connect")
     station = network.WLAN(network.STA_IF)
+    sleep_ms(500);
     if not station.isconnected():
         print('connecting to network...')
+#         WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector 
+        print('station.active')
         station.active(True)
+        sleep_ms(100)
+        print('station.connect')
         station.connect(ssid, pwd)
         while not station.isconnected():
-            sleep_ms(10)
+            print('station.isconnected')
+            sleep_ms(50)
             pass
+        sleep_ms(500);
+#         WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 1); //enable brownout detector
     print('network config:', station.ifconfig())
-    Strip1.SetColor(0,0,255)
+    ColorRGB[2]=128
+    #Strip1.SetColor(0,0,255)
 
 def thread_webserver(delay, name):
     global web_page
@@ -96,10 +109,10 @@ def thread_webserver(delay, name):
 #    sleep_ms(100)
     # print webpage =========================================================================================================
     conn, addr = websocket.accept()
-    #print('Got a connection from %s' % str(addr)) 
+    print('Got a connection from %s' % str(addr)) 
     request = conn.recv(1024)
     request = str(request)
-    #print('Content = %s' % request)
+    print('Content = %s' % request)
     led_on = request.find('/?led=on')
     if led_on == 6:
         #print('LED ON')
@@ -179,6 +192,7 @@ def th_init_wifi():
     global ssid
     global password
     global wifi_init_done
+    print ("th_init_wifi") 
     get_wlankeys()
     print (ssid)
     do_connect(ssid, password)
@@ -187,9 +201,9 @@ def th_init_wifi():
 #    _thread.start_new_thread(thread_webserver,( 4, "webserver"))
 
 wifi_init_done=False
-_thread.start_new_thread(th_init_wifi, ())
+#_thread.start_new_thread(th_init_wifi, ())
 
-# th_init_wifi() # debug
+th_init_wifi() # debug
 
 # Webserver end =========================================================================================================
 
@@ -260,10 +274,10 @@ def Button_R_callback(pin):
             pass
         Button_R_cnt += 1
 
-def do_a_blink():
-    led.value(1)
-    sleep_ms(200)
-    led.value(0)
+def do_a_blink(status):
+    led.value(status)
+#    sleep_ms(200)
+#    led.value(0)
 
 def strips_update_Brightness():
     global ColorSollwerte
@@ -320,10 +334,11 @@ set_JSON(Light_W,Light_R)
 led.value(1)
 toggle=1
 cnt=0
-firstrun=True
+WS_initstage=0
 print ("entering mainloop")
 while True:
-    led.value(toggle)
+#    led.value(toggle)
+#    do_a_blink(toggle)
     #    sleep_ms(200)
     #    led.value(0)
     if Light_W=="ON" or Light_R=="ON": # only if at least one switch is on
@@ -339,27 +354,30 @@ while True:
         if Brightness < 1: # no overshoot
             Brightness = 1
         #print(f"Brightness update ={Brightness} = {r_value}")
-    sleep_ms(50)
+    sleep_ms(40)
     cnt +=1
-    if cnt == 20:
-        print ("main loop")
+    if cnt == 10:
+#        print ("main loop")
         cnt=0
         if toggle == 0:
             toggle = 1
         else:
             toggle = 0
 #            gc.collect()
-        if wifi_init_done==True and firstrun==False :
+        if wifi_init_done==True and WS_initstage==1 :
+            print ("Webserver running")
             thread_webserver(4,"WS")
 
-    # Webserver 
-    if wifi_init_done==True and firstrun==True:
-        firstrun=False
-        #global websocket
+    # Webserver
+    if wifi_init_done==True and WS_initstage==0:
+        print ("Websocket")
+        global websocket
         websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         websocket.bind(('', 80))
         websocket.listen(5)
-        sleep_ms(50)
+        sleep_ms(500)
+        print ("Websocket done")
+        WS_initstage=1
     
 
 #    print ("colorwheel")
