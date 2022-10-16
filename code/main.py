@@ -41,7 +41,8 @@ ColorSollwerte = [0,0,0]
 Fade_speed = 4
 
 # init LED Stripes
-Strip1 = LEDStrip(ColorRGB[0], ColorRGB[1], ColorRGB[2], 27, 25, 32)    # TODO  Listen übergeben
+# TODO  Listen übergeben
+Strip1 = LEDStrip(ColorRGB[0], ColorRGB[1], ColorRGB[2], 27, 25, 32)
 Strip2 = LEDStrip(ColorRGB[0], ColorRGB[1], ColorRGB[2], 17, 21, 22)
 Strip1.SetColor(ColorRGB[0], ColorRGB[1], ColorRGB[2])
 Strip2.SetColor(ColorRGB[0], ColorRGB[1], ColorRGB[2])
