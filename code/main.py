@@ -56,7 +56,17 @@ isRotaryEncoder = True
 
 # rotary encoder init end
 
-
+# Webserver start
+WS_initstage = 0
+websocket=""
+def get_websocket():
+    global websocket
+    print("Websocket init")
+    websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    websocket.bind(('', 80))
+    websocket.listen(5)
+    sleep_ms(500)
+    print("Websocket done")
 
 def thread_webserver(delay, name):
     global web_page
@@ -66,15 +76,18 @@ def thread_webserver(delay, name):
     global Light_W
     global Light_R
     global ColorSollwerte
+    global WS_initstage
 #    print(f'Running thread {name}' )
 #    while True:
 #    sleep_ms(100)
+#   Init Websocket
+
     # print webpage =========================================================================================================
     conn, addr = websocket.accept()
-    print('Got a connection from %s' % str(addr))
+#    print('Got a connection from %s' % str(addr))
     request = conn.recv(1024)
     request = str(request)
-    print('Content = %s' % request)
+#    print('Content = %s' % request)
     led_on = request.find('/?led=on')
     if led_on == 6:
         #print('LED ON')
@@ -110,21 +123,21 @@ def thread_webserver(delay, name):
     set_JSON(Light_W, Light_R)
     jsonrequest = request.find('data.json')
     cssrequest = request.find('web.css')
-    if jsonrequest > 4:
+    if jsonrequest > 4:     # JSON
         response = JSONdata
         conn.send('HTTP/1.1 200 OK\n')
         conn.send('Content-Type: application/json\n')
         conn.send('Connection: close\n\n')
         conn.sendall(response)
         conn.close()
-    elif cssrequest > 4:
+    elif cssrequest > 4:    #CSS
         response = web_css()
         conn.send('HTTP/1.1 200 OK\n')
         conn.send('Content-Type: text/css\n')
         conn.send('Connection: close\n\n')
         conn.sendall(response)
         conn.close()
-    else:
+    else:                   # HTML
         response = web_page()
         conn.send('HTTP/1.1 200 OK\n')
         conn.send('Content-Type: text/html\n')
@@ -283,6 +296,9 @@ def LEDfadeTimer(timer):
 
 timer.init(period=50, mode=machine.Timer.PERIODIC, callback=LEDfadeTimer)
 
+get_websocket()
+#timer.init(period=100, mode=machine.Timer.PERIODIC, callback=thread_webserver)
+
 # turn off LEDs
 Strip1.SetColor(0, 0, 0)
 Strip2.SetColor(0, 0, 0)
@@ -294,8 +310,8 @@ set_JSON(Light_W, Light_R)
 led.value(1)
 toggle = 1
 cnt = 0
-WS_initstage = 0
 print("entering mainloop")
+import time
 while True:
     #    led.value(toggle)
     #    do_a_blink(toggle)
@@ -314,8 +330,11 @@ while True:
         if Brightness < 1:  # no overshoot
             Brightness = 1
         #print(f"Brightness update ={Brightness} = {r_value}")
-    sleep_ms(40)
+    sleep_ms(10)
     cnt += 1
+    time1=time.time()
+    thread_webserver(4,"webserver")
+    print ("RUNTIME: " , str( (time.time() - time1) ))
     if cnt == 10:
         #        print ("main loop")
         cnt = 0
@@ -323,19 +342,7 @@ while True:
             toggle = 1
         else:
             toggle = 0
-#            gc.collect()
-
-    # Webserver
-    if wifi_init_done == True and WS_initstage == 0:
-        print("Websocket")
-        global websocket
-        websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        websocket.bind(('', 80))
-        websocket.listen(5)
-        sleep_ms(500)
-        print("Websocket done")
-        WS_initstage = 1
-
+            gc.collect()
 
 #    print ("colorwheel")
 #    Strip1.SetColor(255,0,0)
@@ -346,3 +353,4 @@ while True:
 #    sleep_ms(1000)
 #    Strip1.SetColor(255,255,255)
 #    sleep_ms(1000)
+

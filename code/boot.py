@@ -14,6 +14,8 @@ print ("boot.py")
 import os
 import machine
 
+print ("boot.py get_wifi_connection") 
 import get_wifi_connection
 wifi=""
 get_wifi_connection.connect_wifi()
+print ("boot.py done") 

@@ -37,7 +37,7 @@ class LEDStrip:
         self.pwmR.duty(r)
         self.pwmG.duty(g)
         self.pwmB.duty(b)
-        print(f"Set R{R}G{G}B{B} r{r}g{g}b{b}")
+#        print(f"Set R{R}G{G}B{B} r{r}g{g}b{b}")
         
 #ColorR=255
 #ColorG=0
