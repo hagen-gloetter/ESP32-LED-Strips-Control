@@ -36,10 +36,10 @@ Light_W = "OFF"  # white
 Light_R = "OFF"  # red
 
 # setup LED Stripes
-Brightness = 256
+Brightness = 1024
 ColorRGB = [0, 0, 0]
 ColorSollwerte = [0, 0, 0]
-Fade_speed = 4
+Fade_speed = 16
 
 # init LED Stripes
 # TODO  Listen übergeben
@@ -48,7 +48,7 @@ Strip2 = LEDStrip(ColorRGB[0], ColorRGB[1], ColorRGB[2], 17, 21, 22)
 Strip1.SetColor(ColorRGB[0], ColorRGB[1], ColorRGB[2])
 Strip2.SetColor(ColorRGB[0], ColorRGB[1], ColorRGB[2])
 
-r = RotaryIRQ(pin_num_clk=33, pin_num_dt=34, min_val=1, max_val=16,
+r = RotaryIRQ(pin_num_clk=33, pin_num_dt=34, min_val=0, max_val=10,
               reverse=True, range_mode=RotaryIRQ.RANGE_BOUNDED)
 sw = Pin(14, Pin.IN)
 val_old = r.value()
@@ -69,82 +69,85 @@ def get_websocket():
     print("Websocket done")
 
 def thread_webserver(delay, name):
-    global web_page
-    global web_css
-    global JSONdata
-    global websocket
-    global Light_W
-    global Light_R
-    global ColorSollwerte
-    global WS_initstage
-#    print(f'Running thread {name}' )
-#    while True:
-#    sleep_ms(100)
-#   Init Websocket
-
-    # print webpage =========================================================================================================
-    conn, addr = websocket.accept()
-#    print('Got a connection from %s' % str(addr))
-    request = conn.recv(1024)
-    request = str(request)
-#    print('Content = %s' % request)
-    led_on = request.find('/?led=on')
-    if led_on == 6:
-        #print('LED ON')
-        led.value(1)
-    led_off = request.find('/?led=off')
-    if led_off == 6:
-        #print('LED OFF')
-        led.value(0)
-    # red
-    red_on = request.find('/?red=on')
-    if red_on == 6:
-        Light_R = "ON"
-        Light_W = "OFF"
-        print('Web RED ON')
-        ColorSollwerte = [Brightness, 0, 0]
-    red_off = request.find('/?red=off')
-    if red_off == 6:
-        Light_R = "OFF"
-        print('Web RED OFF')
-        ColorSollwerte = [0, 0, 0]
-    # white
-    white_on = request.find('/?white=on')
-    if white_on == 6:
-        Light_W = "ON"
-        Light_R = "OFF"
-        print('Web white ON')
-        ColorSollwerte = [Brightness, Brightness, Brightness]
-    white_off = request.find('/?white=off')
-    if white_off == 6:
-        Light_W = "OFF"
-        print('Web white OFF')
-        ColorSollwerte = [0, 0, 0]
-    set_JSON(Light_W, Light_R)
-    jsonrequest = request.find('data.json')
-    cssrequest = request.find('web.css')
-    if jsonrequest > 4:     # JSON
-        response = JSONdata
-        conn.send('HTTP/1.1 200 OK\n')
-        conn.send('Content-Type: application/json\n')
-        conn.send('Connection: close\n\n')
-        conn.sendall(response)
-        conn.close()
-    elif cssrequest > 4:    #CSS
-        response = web_css()
-        conn.send('HTTP/1.1 200 OK\n')
-        conn.send('Content-Type: text/css\n')
-        conn.send('Connection: close\n\n')
-        conn.sendall(response)
-        conn.close()
-    else:                   # HTML
-        response = web_page()
-        conn.send('HTTP/1.1 200 OK\n')
-        conn.send('Content-Type: text/html\n')
-        conn.send('Connection: close\n\n')
-        conn.sendall(response)
-        conn.close()
-
+    while True:
+        global web_page
+        global web_css
+        global JSONdata
+        global websocket
+        global Light_W
+        global Light_R
+        global ColorSollwerte
+    #    print(f'Running thread {name}' )
+    #    while True:
+    #    sleep_ms(100)
+    #   Init Websocket
+        # print webpage =========================================================================================================
+#        print('Before accept')
+        conn, addr = websocket.accept()
+#        print('Got a connection from %s' % str(addr))
+        try:
+            request = conn.recv(1024)
+            request = str(request)
+            machine.idle()
+        #    print('Content = %s' % request)
+            led_on = request.find('/?led=on')
+            if led_on == 6:
+                #print('LED ON')
+                led.value(1)
+            led_off = request.find('/?led=off')
+            if led_off == 6:
+                #print('LED OFF')
+                led.value(0)
+            # red
+            red_on = request.find('/?red=on')
+            if red_on == 6:
+                Light_R = "ON"
+                Light_W = "OFF"
+                print('Web RED ON')
+                ColorSollwerte = [Brightness, 0, 0]
+            red_off = request.find('/?red=off')
+            if red_off == 6:
+                Light_R = "OFF"
+                print('Web RED OFF')
+                ColorSollwerte = [0, 0, 0]
+            # white
+            white_on = request.find('/?white=on')
+            if white_on == 6:
+                Light_W = "ON"
+                Light_R = "OFF"
+                print('Web white ON')
+                ColorSollwerte = [Brightness, Brightness, Brightness]
+            white_off = request.find('/?white=off')
+            if white_off == 6:
+                Light_W = "OFF"
+                print('Web white OFF')
+                ColorSollwerte = [0, 0, 0]
+            set_JSON(Light_W, Light_R)
+            jsonrequest = request.find('data.json')
+            cssrequest = request.find('web.css')
+            if jsonrequest > 4:     # JSON
+                response = JSONdata
+                conn.send('HTTP/1.1 200 OK\n')
+                conn.send('Content-Type: application/json\n')
+                conn.send('Connection: close\n\n')
+                conn.sendall(response)
+                conn.close()
+            elif cssrequest > 4:    #CSS
+                response = web_css()
+                conn.send('HTTP/1.1 200 OK\n')
+                conn.send('Content-Type: text/css\n')
+                conn.send('Connection: close\n\n')
+                conn.sendall(response)
+                conn.close()
+            else:                   # HTML
+                response = web_page()
+                conn.send('HTTP/1.1 200 OK\n')
+                conn.send('Content-Type: text/html\n')
+                conn.send('Connection: close\n\n')
+                conn.sendall(response)
+                conn.close()
+        except:
+            conn.close()
 
 JSONdata = """
 {
@@ -306,7 +309,7 @@ strips_update_Brightness()
 set_JSON(Light_W, Light_R)
 
 # debug no thread
-# thread_webserver(4,"webserver")
+_thread.start_new_thread(thread_webserver, (4,"webserver"))
 led.value(1)
 toggle = 1
 cnt = 0
@@ -321,21 +324,18 @@ while True:
         pass
         r_value = r.get_rotary_encoder(sw, val_old)
         if r_value != None:  # somehow zero means None ?
-            Brightness = r_value*16  # tranlate 16 steps to 255 color-steps and set limits
+            Brightness = 2**r_value  # tranlate 16 steps to 255 color-steps and set limits
         else:
             pass
-            #Brightness = 1
-        if Brightness > 256:  # no overshoot
-            Brightness = 256
-        if Brightness < 1:  # no overshoot
-            Brightness = 1
         #print(f"Brightness update ={Brightness} = {r_value}")
-    sleep_ms(10)
+#    sleep_ms(10)
+
     cnt += 1
-    time1=time.time()
-    thread_webserver(4,"webserver")
-    print ("RUNTIME: " , str( (time.time() - time1) ))
-    if cnt == 10:
+#    machine.idle()
+#    time1=time.time()
+#    thread_webserver(4,"webserver")
+#    print ("RUNTIME: " , str( (time.time() - time1) ))
+    if cnt == 60000:
         #        print ("main loop")
         cnt = 0
         if toggle == 0:
@@ -353,4 +353,3 @@ while True:
 #    sleep_ms(1000)
 #    Strip1.SetColor(255,255,255)
 #    sleep_ms(1000)
-

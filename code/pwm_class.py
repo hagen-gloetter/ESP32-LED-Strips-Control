@@ -6,7 +6,7 @@ print('LEDStrip Class loaded')
 
 class LEDStrip:
     def __init__(self, R,G,B, GPIO1=27,GPIO2=25,GPIO3=32):
-        frequency=500
+        frequency=7321 # Prime for no visible artefacts in eyes and cellphones
         self.R=R
         self.G=G
         self.B=B
@@ -25,9 +25,9 @@ class LEDStrip:
         
     def SetColor (self, R,G,B):
         # duty is from 0 to 1023 RGB is from 0-255 ->
-        r=R*4
-        g=G*4
-        b=B*4
+        r=R
+        g=G
+        b=B
         if r>1023:
             r=1023 
         if g>1023:
@@ -37,7 +37,7 @@ class LEDStrip:
         self.pwmR.duty(r)
         self.pwmG.duty(g)
         self.pwmB.duty(b)
-#        print(f"Set R{R}G{G}B{B} r{r}g{g}b{b}")
+        #print(f"Set R{R}G{G}B{B} r{r}g{g}b{b}") 
         
 #ColorR=255
 #ColorG=0

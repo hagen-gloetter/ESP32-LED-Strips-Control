@@ -19,28 +19,28 @@ def web_page():
     <table>
       <tr>
         <td><p>Licht Rot</p></td>
-        <td><p id="button_red"></p></td>
+        <td><p id="button_red">OFF</p></td>
         <td><p><a href="/?red=on"><button class="button">ON</button></a><a href="/?red=off"><button class="button button2">OFF</button></a> </p></td>
       </tr>
       <tr>
         <td><p>Licht Weiss</p></td>
-        <td><p id="button_white"></p></td>
+        <td><p id="button_white">OFF</p></td>
         <td><p><a href="/?white=on"><button class="button">ON</button></a><a href="/?white=off"><button class="button button2">OFF</button></a> </p></td>
       </tr>
       <tr>
         <td><p>Helligkeit</p></td>
-        <td><p id="LED_brightness"></p></td>
+        <td><p id="LED_brightness">1024</p></td>
         <td><p></p></td>
       </tr>
       <tr>
         <td><p>Dach</p></td>
-        <td><p id="LED_roof"></p></td>
+        <td><p id="LED_roof">NA</p></td>
         <td><p>Dach</p></td>
       </tr>
       <tr>
         <td><p>Test LED</p></td>
         <td><p ></p></td>
-        <td><p><a href="/?led=on"><button class="button">ON</button></a><a href="/?led=off"><button class="button button2">OFF</button></a></p></td>
+        <td><p><a href="/?led=on">OFF<button class="button">ON</button></a><a href="/?led=off"><button class="button button2">OFF</button></a></p></td>
       </tr>
 
     </table>
