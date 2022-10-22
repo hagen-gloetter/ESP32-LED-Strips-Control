@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 code/secrets.json
 code/secretsSW.json
+code/secrets2.json
