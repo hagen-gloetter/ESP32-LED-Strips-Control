@@ -17,7 +17,7 @@ try:
     import usocket as socket
 except:
     import socket
-print("main.py")
+print("main.py start")
 
 
 # setup LED
@@ -34,6 +34,7 @@ Button_W_cnt = 0
 Button_R_cnt = 0
 Light_W = "OFF"  # white
 Light_R = "OFF"  # red
+run_webserver = True
 
 # setup LED Stripes
 Brightness = 1024
@@ -50,8 +51,8 @@ Strip2.SetColor(ColorRGB[0], ColorRGB[1], ColorRGB[2])
 
 r = RotaryIRQ(pin_num_clk=33, pin_num_dt=34, min_val=0, max_val=10,
               reverse=True, range_mode=RotaryIRQ.RANGE_BOUNDED)
-sw = Pin(14, Pin.IN)
-val_old = r.value()
+rotarySwitch = Pin(14, Pin.IN)
+rotary_val_old = r.value()
 isRotaryEncoder = True
 
 # rotary encoder init end
@@ -69,7 +70,8 @@ def get_websocket():
     print("Websocket done")
 
 def thread_webserver(delay, name):
-    while True:
+    global run_webserver
+    while run_webserver==True:
         global web_page
         global web_css
         global JSONdata
@@ -289,18 +291,39 @@ Button_R = Button(pin=Pin(Button_R_PIN, mode=Pin.IN, pull=Pin.PULL_UP),
 
 # button part end =========================================================================================================
 
-# Run LED Fading via timer interrupt (smoother than MainLoop)
-timer = machine.Timer(0)
+def RotaryController():
+    global Light_W
+    global Light_R
+    global rotary_val_old
+    global rotarySwitch
+    global Brightness
+    if Light_W == "ON" or Light_R == "ON":  # only if at least one switch is on
+        r_value = r.get_rotary_encoder(rotarySwitch, rotary_val_old)
+        if r_value != None:  # somehow zero means None ?
+            Brightness = 2**r_value  # tranlate 16 steps to 255 color-steps and set limits
+        else:
+            pass
+        #print(f"Brightness update ={Brightness} = {r_value}")
 
 
-def LEDfadeTimer(timer):
+def LEDfadeTimer(timer1):
     strips_update_Brightness()
+    
+def RotaryControllerTimer(timer2):
+    RotaryController()
+
+# Run LED Fading via timer interrupt (smoother than MainLoop)
+print ("Start Fade Timer")
+timer1 = machine.Timer(0)
+timer1.init(period=53, mode=machine.Timer.PERIODIC, callback=LEDfadeTimer)
+
+print ("Start RotaryController Timer")
+timer2 = machine.Timer(1)
+timer2.init(period=59, mode=machine.Timer.PERIODIC, callback=RotaryControllerTimer)
 
 
-timer.init(period=50, mode=machine.Timer.PERIODIC, callback=LEDfadeTimer)
 
 get_websocket()
-#timer.init(period=100, mode=machine.Timer.PERIODIC, callback=thread_webserver)
 
 # turn off LEDs
 Strip1.SetColor(0, 0, 0)
@@ -315,34 +338,47 @@ toggle = 1
 cnt = 0
 print("entering mainloop")
 import time
-while True:
+Strip1.SetColor(0, 1023, 0) # give me some green light that init is done ;-)
+sleep_ms(200)
+Strip1.SetColor(0, 0, 0)
+
+def stop_all():
+    Strip1.SetColor(0, 1023, 0) # give me some light that init is done ;-)
+    sleep_ms(500)
+    Strip1.SetColor(0, 1023, 1023)
+    sleep_ms(500)
+    Strip1.SetColor(0, 0, 0)
+    # shut it down
+    global run_webserver
+    run_webserver = False
+    timer2.deinit()
+    timer1.deinit()
+    import get_wifi_connection
+    global wifi
+    get_wifi_connection.disconnect_wifi()
+    
+    
+#while True:
     #    led.value(toggle)
     #    do_a_blink(toggle)
     #    sleep_ms(200)
     #    led.value(0)
-    if Light_W == "ON" or Light_R == "ON":  # only if at least one switch is on
-        pass
-        r_value = r.get_rotary_encoder(sw, val_old)
-        if r_value != None:  # somehow zero means None ?
-            Brightness = 2**r_value  # tranlate 16 steps to 255 color-steps and set limits
-        else:
-            pass
-        #print(f"Brightness update ={Brightness} = {r_value}")
+
 #    sleep_ms(10)
 
-    cnt += 1
+#    cnt += 1
 #    machine.idle()
 #    time1=time.time()
 #    thread_webserver(4,"webserver")
 #    print ("RUNTIME: " , str( (time.time() - time1) ))
-    if cnt == 60000:
+#    if cnt == 60000:
         #        print ("main loop")
-        cnt = 0
-        if toggle == 0:
-            toggle = 1
-        else:
-            toggle = 0
-            gc.collect()
+#        cnt = 0
+ #       if toggle == 0:
+#            toggle = 1
+#        else:
+#            toggle = 0
+#            gc.collect()
 
 #    print ("colorwheel")
 #    Strip1.SetColor(255,0,0)
