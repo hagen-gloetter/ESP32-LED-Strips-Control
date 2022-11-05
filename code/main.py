@@ -13,6 +13,7 @@ import time
 import machine
 import gc
 import network
+
 try:
     import usocket as socket
 except:
@@ -23,7 +24,7 @@ print("main.py start")
 # setup LED
 led = machine.Pin(2, machine.Pin.OUT)
 CPU_Speed = machine.freq()
-machine.freq(int(CPU_Speed/2))
+machine.freq(int(CPU_Speed / 2))
 print(f"machine.freq={CPU_Speed}")
 # Buttons
 Button_W_PIN = const(13)
@@ -49,8 +50,14 @@ Strip2 = LEDStrip(ColorRGB[0], ColorRGB[1], ColorRGB[2], 17, 21, 22)
 Strip1.SetColor(ColorRGB[0], ColorRGB[1], ColorRGB[2])
 Strip2.SetColor(ColorRGB[0], ColorRGB[1], ColorRGB[2])
 
-r = RotaryIRQ(pin_num_clk=33, pin_num_dt=34, min_val=0, max_val=10,
-              reverse=True, range_mode=RotaryIRQ.RANGE_BOUNDED)
+r = RotaryIRQ(
+    pin_num_clk=33,
+    pin_num_dt=34,
+    min_val=0,
+    max_val=10,
+    reverse=True,
+    range_mode=RotaryIRQ.RANGE_BOUNDED,
+)
 rotarySwitch = Pin(14, Pin.IN)
 rotary_val_old = r.value()
 isRotaryEncoder = True
@@ -59,19 +66,22 @@ isRotaryEncoder = True
 
 # Webserver start
 WS_initstage = 0
-websocket=""
+websocket = ""
+
+
 def get_websocket():
     global websocket
     print("Websocket init")
     websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    websocket.bind(('', 80))
+    websocket.bind(("", 80))
     websocket.listen(5)
     sleep_ms(500)
     print("Websocket done")
 
+
 def thread_webserver(delay, name):
     global run_webserver
-    while run_webserver==True:
+    while run_webserver == True:
         global web_page
         global web_css
         global JSONdata
@@ -79,77 +89,78 @@ def thread_webserver(delay, name):
         global Light_W
         global Light_R
         global ColorSollwerte
-    #    print(f'Running thread {name}' )
-    #    while True:
-    #    sleep_ms(100)
-    #   Init Websocket
+        #    print(f'Running thread {name}' )
+        #    while True:
+        #    sleep_ms(100)
+        #   Init Websocket
         # print webpage =========================================================================================================
-#        print('Before accept')
+        #        print('Before accept')
         conn, addr = websocket.accept()
-#        print('Got a connection from %s' % str(addr))
+        #        print('Got a connection from %s' % str(addr))
         try:
             request = conn.recv(1024)
             request = str(request)
             machine.idle()
-        #    print('Content = %s' % request)
-            led_on = request.find('/?led=on')
+            #    print('Content = %s' % request)
+            led_on = request.find("/?led=on")
             if led_on == 6:
-                #print('LED ON')
+                # print('LED ON')
                 led.value(1)
-            led_off = request.find('/?led=off')
+            led_off = request.find("/?led=off")
             if led_off == 6:
-                #print('LED OFF')
+                # print('LED OFF')
                 led.value(0)
             # red
-            red_on = request.find('/?red=on')
+            red_on = request.find("/?red=on")
             if red_on == 6:
                 Light_R = "ON"
                 Light_W = "OFF"
-                print('Web RED ON')
+                print("Web RED ON")
                 ColorSollwerte = [Brightness, 0, 0]
-            red_off = request.find('/?red=off')
+            red_off = request.find("/?red=off")
             if red_off == 6:
                 Light_R = "OFF"
-                print('Web RED OFF')
+                print("Web RED OFF")
                 ColorSollwerte = [0, 0, 0]
             # white
-            white_on = request.find('/?white=on')
+            white_on = request.find("/?white=on")
             if white_on == 6:
                 Light_W = "ON"
                 Light_R = "OFF"
-                print('Web white ON')
+                print("Web white ON")
                 ColorSollwerte = [Brightness, Brightness, Brightness]
-            white_off = request.find('/?white=off')
+            white_off = request.find("/?white=off")
             if white_off == 6:
                 Light_W = "OFF"
-                print('Web white OFF')
+                print("Web white OFF")
                 ColorSollwerte = [0, 0, 0]
             set_JSON(Light_W, Light_R)
-            jsonrequest = request.find('data.json')
-            cssrequest = request.find('web.css')
-            if jsonrequest > 4:     # JSON
+            jsonrequest = request.find("data.json")
+            cssrequest = request.find("web.css")
+            if jsonrequest > 4:  # JSON
                 response = JSONdata
-                conn.send('HTTP/1.1 200 OK\n')
-                conn.send('Content-Type: application/json\n')
-                conn.send('Connection: close\n\n')
+                conn.send("HTTP/1.1 200 OK\n")
+                conn.send("Content-Type: application/json\n")
+                conn.send("Connection: close\n\n")
                 conn.sendall(response)
                 conn.close()
-            elif cssrequest > 4:    #CSS
+            elif cssrequest > 4:  # CSS
                 response = web_css()
-                conn.send('HTTP/1.1 200 OK\n')
-                conn.send('Content-Type: text/css\n')
-                conn.send('Connection: close\n\n')
+                conn.send("HTTP/1.1 200 OK\n")
+                conn.send("Content-Type: text/css\n")
+                conn.send("Connection: close\n\n")
                 conn.sendall(response)
                 conn.close()
-            else:                   # HTML
+            else:  # HTML
                 response = web_page()
-                conn.send('HTTP/1.1 200 OK\n')
-                conn.send('Content-Type: text/html\n')
-                conn.send('Connection: close\n\n')
+                conn.send("HTTP/1.1 200 OK\n")
+                conn.send("Content-Type: text/html\n")
+                conn.send("Connection: close\n\n")
                 conn.sendall(response)
                 conn.close()
         except:
             conn.close()
+
 
 JSONdata = """
 {
@@ -168,12 +179,13 @@ def set_JSON(status1, status2):
     s2 = '"button_white":"' + str(Light_W) + '",\n'
     s3 = '"LED_brightness":"' + str(Brightness) + '",\n'
     s4 = '"LED_roof":"' + "NA" + '"\n}\n'
-    JSONdata = s1+s2+s3+s4
+    JSONdata = s1 + s2 + s3 + s4
 
 
 # Webserver end =========================================================================================================
 
 # button part start =========================================================================================================
+
 
 def Button_W_switch():
     global Light_W
@@ -195,6 +207,7 @@ def Button_R_switch():
     global Light_W
     global Light_R
     global ColorSollwerte
+    global Brightness
     if Light_R == "OFF" and Light_W == "OFF":
         Light_R = "ON"
         print("Red ON")
@@ -221,7 +234,7 @@ def Button_W_callback(pin):
                 Button_W_Status = "OFF"
             else:
                 Button_W_Status = "ON"
-            #print(f"Button A (%s) cnt:{Button_W_cnt} status:{Button_W_Status}" % pin)
+            print(f"Button A (%s) cnt:{Button_W_cnt} status:{Button_W_Status}" % pin)
             Button_W_switch()
         else:
             pass
@@ -238,19 +251,16 @@ def Button_R_callback(pin):
                 Button_R_Status = "OFF"
             else:
                 Button_R_Status = "ON"
-            print(
-                f"Button B (%s) cnt:{Button_R_cnt} status:{Button_R_Status}" % pin)
+            print(f"Button B (%s) cnt:{Button_R_cnt} status:{Button_R_Status}" % pin)
             Button_R_switch()
         else:
             pass
         Button_R_cnt += 1
 
-
 def do_a_blink(status):
     led.value(status)
 #    sleep_ms(200)
 #    led.value(0)
-
 
 def strips_update_Brightness():
     global ColorSollwerte
@@ -260,13 +270,13 @@ def strips_update_Brightness():
     if Light_W == "ON":
         # set Brightness to Sollwerte
         ColorSollwerte = [Brightness, Brightness, Brightness]
-        #print(f"Brightness White Changed: {Brightness}")
+        # print(f"Brightness White Changed: {Brightness}")
     elif Light_R == "ON":
         ColorSollwerte = [Brightness, 0, 0]
         # print(f"Brightness Red Changed: {Brightness}") # set Brightness to Sollwerte
 
     for i in range(len(ColorRGB)):
-        #print ("rgb:{} rgb:{}",str(ColorRGB[i]),str(ColorSollwerte[i]))
+        # print ("rgb:{} rgb:{}",str(ColorRGB[i]),str(ColorSollwerte[i]))
         if ColorRGB[i] < ColorSollwerte[i]:  # fade in
             ColorRGB[i] = ColorRGB[i] + Fade_speed
             if ColorRGB[i] >= ColorSollwerte[i]:  # no overshoot
@@ -284,12 +294,20 @@ def strips_update_Brightness():
 
 
 # init callback function and iterrupts
-Button_W = Button(pin=Pin(Button_W_PIN, mode=Pin.IN, pull=Pin.PULL_UP),
-                  trigger=Pin.IRQ_RISING, callback=Button_W_callback)
-Button_R = Button(pin=Pin(Button_R_PIN, mode=Pin.IN, pull=Pin.PULL_UP),
-                  trigger=Pin.IRQ_RISING, callback=Button_R_callback)
+Button_W = Button(
+    pin=Pin(Button_W_PIN, mode=Pin.IN, pull=Pin.PULL_UP),
+    trigger=Pin.IRQ_RISING,
+    callback=Button_W_callback
+)
+
+Button_R = Button(
+    pin=Pin(Button_R_PIN, mode=Pin.IN, pull=Pin.PULL_UP),
+    trigger=Pin.IRQ_RISING,
+    callback=Button_R_callback
+)
 
 # button part end =========================================================================================================
+
 
 def RotaryController():
     global Light_W
@@ -300,27 +318,30 @@ def RotaryController():
     if Light_W == "ON" or Light_R == "ON":  # only if at least one switch is on
         r_value = r.get_rotary_encoder(rotarySwitch, rotary_val_old)
         if r_value != None:  # somehow zero means None ?
-            Brightness = 2**r_value  # tranlate 16 steps to 255 color-steps and set limits
+            Brightness = (
+                2**r_value
+            )  # tranlate 16 steps to 255 color-steps and set limits
         else:
             pass
-        #print(f"Brightness update ={Brightness} = {r_value}")
+        # print(f"Brightness update ={Brightness} = {r_value}")
 
 
 def LEDfadeTimer(timer1):
     strips_update_Brightness()
-    
+
+
 def RotaryControllerTimer(timer2):
     RotaryController()
 
+
 # Run LED Fading via timer interrupt (smoother than MainLoop)
-print ("Start Fade Timer")
+print("Start Fade Timer")
 timer1 = machine.Timer(0)
 timer1.init(period=53, mode=machine.Timer.PERIODIC, callback=LEDfadeTimer)
 
-print ("Start RotaryController Timer")
+print("Start RotaryController Timer")
 timer2 = machine.Timer(1)
 timer2.init(period=59, mode=machine.Timer.PERIODIC, callback=RotaryControllerTimer)
-
 
 
 get_websocket()
@@ -332,18 +353,20 @@ strips_update_Brightness()
 set_JSON(Light_W, Light_R)
 
 # debug no thread
-_thread.start_new_thread(thread_webserver, (4,"webserver"))
+_thread.start_new_thread(thread_webserver, (4, "webserver"))
 led.value(1)
 toggle = 1
 cnt = 0
 print("entering mainloop")
 import time
-Strip1.SetColor(0, 1023, 0) # give me some green light that init is done ;-)
+
+Strip1.SetColor(0, 1023, 0)  # give me some green light that init is done ;-)
 sleep_ms(200)
 Strip1.SetColor(0, 0, 0)
 
+
 def stop_all():
-    Strip1.SetColor(0, 1023, 0) # give me some light that init is done ;-)
+    Strip1.SetColor(0, 1023, 0)  # give me some light that init is done ;-)
     sleep_ms(500)
     Strip1.SetColor(0, 1023, 1023)
     sleep_ms(500)
@@ -354,15 +377,16 @@ def stop_all():
     timer2.deinit()
     timer1.deinit()
     import get_wifi_connection
+
     global wifi
     get_wifi_connection.disconnect_wifi()
-    
-    
-#while True:
-    #    led.value(toggle)
-    #    do_a_blink(toggle)
-    #    sleep_ms(200)
-    #    led.value(0)
+
+
+# while True:
+#    led.value(toggle)
+#    do_a_blink(toggle)
+#    sleep_ms(200)
+#    led.value(0)
 
 #    sleep_ms(10)
 
@@ -372,9 +396,9 @@ def stop_all():
 #    thread_webserver(4,"webserver")
 #    print ("RUNTIME: " , str( (time.time() - time1) ))
 #    if cnt == 60000:
-        #        print ("main loop")
+#        print ("main loop")
 #        cnt = 0
- #       if toggle == 0:
+#       if toggle == 0:
 #            toggle = 1
 #        else:
 #            toggle = 0
