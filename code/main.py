@@ -382,7 +382,7 @@ def stop_all():
     get_wifi_connection.disconnect_wifi()
 
 
-# while True:
+ while True:
 #    led.value(toggle)
 #    do_a_blink(toggle)
 #    sleep_ms(200)
@@ -404,12 +404,24 @@ def stop_all():
 #            toggle = 0
 #            gc.collect()
 
-#    print ("colorwheel")
-#    Strip1.SetColor(255,0,0)
-#    sleep_ms(1000)
-#    Strip1.SetColor(0,255,0)
-#    sleep_ms(1000)
-#    Strip1.SetColor(0,0,255)
-#    sleep_ms(1000)
-#    Strip1.SetColor(255,255,255)
-#    sleep_ms(1000)
+    print ("colorwheel R")
+    Strip1.SetColor(1023,0,0)
+    sleep_ms(1000)
+    print ("colorwheel G")
+    Strip1.SetColor(0,1023,0)
+    sleep_ms(1000)
+    print ("colorwheel B")
+    Strip1.SetColor(0,0,1023)
+    sleep_ms(1000)
+    print ("colorwheel White")
+    Strip1.SetColor(1023,1023,1023)
+    sleep_ms(1000)
+    print ("colorwheel Black")
+    Strip1.SetColor(1023,1023,1023)
+    sleep_ms(1000)
+    print ("colorwheel White")
+    Strip1.SetColor(1023,1023,1023)
+    sleep_ms(1000)
+    print ("colorwheel Black")
+    Strip1.SetColor(1023,1023,1023)
+    sleep_ms(1000)
