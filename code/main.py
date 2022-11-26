@@ -333,6 +333,24 @@ def LEDfadeTimer(timer1):
 def RotaryControllerTimer(timer2):
     RotaryController()
 
+def stop_all():
+    Strip1.SetColor(0, 1023, 0)  # give me some light that init is done ;-)
+    sleep_ms(500)
+    Strip1.SetColor(0, 1023, 1023)
+    sleep_ms(500)
+    Strip1.SetColor(0, 0, 0)
+    # shut it down
+    global run_webserver
+    run_webserver = False
+    timer2.deinit()
+    timer1.deinit()
+    import get_wifi_connection
+
+    global wifi
+    get_wifi_connection.disconnect_wifi()
+
+
+
 
 # Run LED Fading via timer interrupt (smoother than MainLoop)
 print("Start Fade Timer")
@@ -364,25 +382,7 @@ Strip1.SetColor(0, 1023, 0)  # give me some green light that init is done ;-)
 sleep_ms(200)
 Strip1.SetColor(0, 0, 0)
 
-
-def stop_all():
-    Strip1.SetColor(0, 1023, 0)  # give me some light that init is done ;-)
-    sleep_ms(500)
-    Strip1.SetColor(0, 1023, 1023)
-    sleep_ms(500)
-    Strip1.SetColor(0, 0, 0)
-    # shut it down
-    global run_webserver
-    run_webserver = False
-    timer2.deinit()
-    timer1.deinit()
-    import get_wifi_connection
-
-    global wifi
-    get_wifi_connection.disconnect_wifi()
-
-
- while True:
+while True:
 #    led.value(toggle)
 #    do_a_blink(toggle)
 #    sleep_ms(200)
@@ -403,13 +403,15 @@ def stop_all():
 #        else:
 #            toggle = 0
 #            gc.collect()
-
+    do_a_blink(0)
     print ("colorwheel R")
     Strip1.SetColor(1023,0,0)
     sleep_ms(1000)
+    do_a_blink(1)
     print ("colorwheel G")
     Strip1.SetColor(0,1023,0)
     sleep_ms(1000)
+    do_a_blink(0)
     print ("colorwheel B")
     Strip1.SetColor(0,0,1023)
     sleep_ms(1000)
