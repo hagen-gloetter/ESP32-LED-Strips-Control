@@ -24,15 +24,17 @@ print("main.py start")
 # setup LED
 led = machine.Pin(2, machine.Pin.OUT)
 CPU_Speed = machine.freq()
-machine.freq(int(CPU_Speed / 2))
-print(f"machine.freq={CPU_Speed}")
+machine.freq(int(CPU_Speed / 2))   # speed break to prevent brown-out while starting WIFI
+#print(f"machine.freq={CPU_Speed}")
 # Buttons
-Button_W_PIN = const(13)
-Button_R_PIN = const(10)
+Button_W_PIN = const(10)
+Button_R_PIN = const(13)
 Button_W_Status = "OFF"
 Button_R_Status = "OFF"
 Button_W_cnt = 0
 Button_R_cnt = 0
+Button_w_block = False
+
 Light_W = "OFF"  # white
 Light_R = "OFF"  # red
 run_webserver = True
@@ -227,18 +229,27 @@ def Button_R_switch():
 def Button_W_callback(pin):
     global Button_W_cnt
     global Button_W_Status
-    if pin.value() == 1:
-        if Button_W_cnt % 2 == 0:
-            Button_W_cnt = 0
-            if Button_W_Status == "ON":
-                Button_W_Status = "OFF"
+    global Button_w_block
+    if (Button_w_block == True):
+        print ("button blocked")
+    else:
+        print ("button w pressed ")
+        Button_w_block = True
+        sleep_ms(200) #debounce
+        if pin.value() == 1:
+            if Button_W_cnt % 2 == 0:
+                Button_W_cnt = 0
+                if Button_W_Status == "ON":
+                    Button_W_Status = "OFF"
+                else:
+                    Button_W_Status = "ON"
+                #print(f"Button A (%s) cnt:{Button_W_cnt} status:{Button_W_Status}" % pin)
+                Button_W_switch()
             else:
-                Button_W_Status = "ON"
-            print(f"Button A (%s) cnt:{Button_W_cnt} status:{Button_W_Status}" % pin)
-            Button_W_switch()
-        else:
-            pass
-        Button_W_cnt += 1
+                pass
+            Button_W_cnt += 1
+        Button_w_block = False
+        print(f"Button_W_callback PIN:{pin} {pin.value()} cnt:{Button_W_cnt} status:{Button_W_Status}")
 
 
 def Button_R_callback(pin):
@@ -251,11 +262,11 @@ def Button_R_callback(pin):
                 Button_R_Status = "OFF"
             else:
                 Button_R_Status = "ON"
-            print(f"Button B (%s) cnt:{Button_R_cnt} status:{Button_R_Status}" % pin)
             Button_R_switch()
         else:
             pass
         Button_R_cnt += 1
+        print(f"Button_R_callback PIN:{pin} {pin.value()} cnt:{Button_R_cnt} status:{Button_R_Status}")
 
 def do_a_blink(status):
     led.value(status)
@@ -333,6 +344,24 @@ def LEDfadeTimer(timer1):
 def RotaryControllerTimer(timer2):
     RotaryController()
 
+def stop_all():
+    Strip1.SetColor(0, 1023, 0)  # give me some light that init is done ;-)
+    sleep_ms(500)
+    Strip1.SetColor(0, 1023, 1023)
+    sleep_ms(500)
+    Strip1.SetColor(0, 0, 0)
+    # shut it down
+    global run_webserver
+    run_webserver = False
+    timer2.deinit()
+    timer1.deinit()
+    import get_wifi_connection
+
+    global wifi
+    get_wifi_connection.disconnect_wifi()
+
+
+
 
 # Run LED Fading via timer interrupt (smoother than MainLoop)
 print("Start Fade Timer")
@@ -364,52 +393,27 @@ Strip1.SetColor(0, 1023, 0)  # give me some green light that init is done ;-)
 sleep_ms(200)
 Strip1.SetColor(0, 0, 0)
 
-
-def stop_all():
-    Strip1.SetColor(0, 1023, 0)  # give me some light that init is done ;-)
-    sleep_ms(500)
-    Strip1.SetColor(0, 1023, 1023)
-    sleep_ms(500)
-    Strip1.SetColor(0, 0, 0)
-    # shut it down
-    global run_webserver
-    run_webserver = False
-    timer2.deinit()
-    timer1.deinit()
-    import get_wifi_connection
-
-    global wifi
-    get_wifi_connection.disconnect_wifi()
-
-
 # while True:
-#    led.value(toggle)
-#    do_a_blink(toggle)
-#    sleep_ms(200)
-#    led.value(0)
-
-#    sleep_ms(10)
-
-#    cnt += 1
-#    machine.idle()
-#    time1=time.time()
-#    thread_webserver(4,"webserver")
-#    print ("RUNTIME: " , str( (time.time() - time1) ))
-#    if cnt == 60000:
-#        print ("main loop")
-#        cnt = 0
-#       if toggle == 0:
-#            toggle = 1
-#        else:
-#            toggle = 0
-#            gc.collect()
-
-#    print ("colorwheel")
-#    Strip1.SetColor(255,0,0)
-#    sleep_ms(1000)
-#    Strip1.SetColor(0,255,0)
-#    sleep_ms(1000)
-#    Strip1.SetColor(0,0,255)
-#    sleep_ms(1000)
-#    Strip1.SetColor(255,255,255)
-#    sleep_ms(1000)
+# #    print ("colorwheel R")
+#     Strip1.SetColor(1023,0,0)
+#     sleep_ms(1000)
+#     do_a_blink(1)
+# #    print ("colorwheel G")
+#     Strip1.SetColor(0,1023,0)
+#     sleep_ms(1000)
+#     do_a_blink(0)
+# #    print ("colorwheel B")
+#     Strip1.SetColor(0,0,1023)
+#     sleep_ms(1000)
+# #    print ("colorwheel White")
+#     Strip1.SetColor(1023,1023,1023)
+#     sleep_ms(1000)
+# #    print ("colorwheel Black")
+#     Strip1.SetColor(1023,1023,1023)
+#     sleep_ms(1000)
+# #    print ("colorwheel White")
+#     Strip1.SetColor(1023,1023,1023)
+#     sleep_ms(1000)
+# #    print ("colorwheel Black")
+#     Strip1.SetColor(1023,1023,1023)
+#     sleep_ms(1000)

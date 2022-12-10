@@ -15,7 +15,7 @@ r = RotaryIRQ(
 sw = Pin(14, Pin.IN)
 val_old = r.value()
 isRotaryEncoder = True
-print ("rotary_encoder loaded")
+#print ("rotary_encoder loaded")
 
 def get_rotary_encoder():
     global isRotaryEncoder
