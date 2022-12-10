@@ -8,11 +8,13 @@ from debounce_class import Button
 from web_html import web_page, web_css
 from time import sleep_ms
 from machine import Pin
+from machine import Timer
 import _thread
 import time
 import machine
 import gc
 import network
+import class_wifi_connection
 
 try:
     import usocket as socket
@@ -20,22 +22,23 @@ except:
     import socket
 print("main.py start")
 
-
+DebugLevel = 4 # 0=none 1=error 2=warn 3=nicetosee 4=whatever
 # setup LED
 led = machine.Pin(2, machine.Pin.OUT)
 CPU_Speed = machine.freq()
-machine.freq(int(CPU_Speed / 2))
-print(f"machine.freq={CPU_Speed}")
+#machine.freq(int(CPU_Speed / 2)) # Brown Out Protection
+#print(f"machine.freq={CPU_Speed}")
 # Buttons
 Button_W_PIN = const(13)
 Button_R_PIN = const(10)
 Button_W_Status = "OFF"
 Button_R_Status = "OFF"
-Button_W_cnt = 0
-Button_R_cnt = 0
+Button_Counter = 0
+debounceTime=400
 Light_W = "OFF"  # white
 Light_R = "OFF"  # red
 run_webserver = True
+
 
 # setup LED Stripes
 Brightness = 1024
@@ -67,6 +70,10 @@ isRotaryEncoder = True
 # Webserver start
 WS_initstage = 0
 websocket = ""
+
+# setup Wifi
+wifi = class_wifi_connection.WifiConnect()
+(wifi_status, wifi_ssid, wifi_ip) = wifi.connect()
 
 
 def get_websocket():
@@ -184,83 +191,16 @@ def set_JSON(status1, status2):
 
 # Webserver end =========================================================================================================
 
-# button part start =========================================================================================================
-
-
-def Button_W_switch():
-    global Light_W
-    global Light_R
-    global ColorSollwerte
-    global Brightness
-    if Light_W == "OFF" and Light_R == "OFF":
-        Light_W = "ON"
-        print("White ON")
-        ColorSollwerte = [Brightness, Brightness, Brightness]
-    elif Light_W == "ON" and Light_R == "OFF":
-        Light_W = "OFF"
-        print("White OFF")
-        ColorSollwerte = [0, 0, 0]
-    set_JSON(Light_W, Light_R)
-
-
-def Button_R_switch():
-    global Light_W
-    global Light_R
-    global ColorSollwerte
-    global Brightness
-    if Light_R == "OFF" and Light_W == "OFF":
-        Light_R = "ON"
-        print("Red ON")
-        ColorSollwerte = [Brightness, 0, 0]
-    elif Light_R == "OFF" and Light_W == "ON":
-        Light_W = "OFF"
-        Light_R = "ON"
-        print("Red over White ON")
-        ColorSollwerte = [Brightness, 0, 0]  # TODO check if this is right
-    else:
-        Light_R = "OFF"
-        print("Red OFF")
-        ColorSollwerte = [0, 0, 0]
-    set_JSON(Light_W, Light_R)
-
-
-def Button_W_callback(pin):
-    global Button_W_cnt
-    global Button_W_Status
-    if pin.value() == 1:
-        if Button_W_cnt % 2 == 0:
-            Button_W_cnt = 0
-            if Button_W_Status == "ON":
-                Button_W_Status = "OFF"
-            else:
-                Button_W_Status = "ON"
-            print(f"Button A (%s) cnt:{Button_W_cnt} status:{Button_W_Status}" % pin)
-            Button_W_switch()
-        else:
-            pass
-        Button_W_cnt += 1
-
-
-def Button_R_callback(pin):
-    global Button_R_cnt
-    global Button_R_Status
-    if pin.value() == 1:
-        if Button_R_cnt % 2 == 0:
-            Button_R_cnt = 0
-            if Button_R_Status == "ON":
-                Button_R_Status = "OFF"
-            else:
-                Button_R_Status = "ON"
-            print(f"Button B (%s) cnt:{Button_R_cnt} status:{Button_R_Status}" % pin)
-            Button_R_switch()
-        else:
-            pass
-        Button_R_cnt += 1
-
 def do_a_blink(status):
     led.value(status)
 #    sleep_ms(200)
 #    led.value(0)
+
+def debug (level,cnt,text):
+    global DebugLevel
+    if level <= DebugLevel:
+        print (f"{str(cnt)} {str(text)}")
+    
 
 def strips_update_Brightness():
     global ColorSollwerte
@@ -293,18 +233,120 @@ def strips_update_Brightness():
     set_JSON(Light_W, Light_R)
 
 
-# init callback function and iterrupts
-Button_W = Button(
-    pin=Pin(Button_W_PIN, mode=Pin.IN, pull=Pin.PULL_UP),
-    trigger=Pin.IRQ_RISING,
-    callback=Button_W_callback
-)
+# button part start =========================================================================================================
 
-Button_R = Button(
-    pin=Pin(Button_R_PIN, mode=Pin.IN, pull=Pin.PULL_UP),
-    trigger=Pin.IRQ_RISING,
-    callback=Button_R_callback
-)
+
+def Button_W_switch():
+    global Light_W
+    global Light_R
+    global ColorSollwerte
+    global Brightness
+    global Button_Counter
+    txt="Button_W_switch"
+    if Light_R == "ON":
+        Light_W = "OFF"
+        Button_Counter +=1
+        txt="Button_W_switch: White IGNORE - Red over White"
+    elif Light_W == "OFF" and Light_R == "OFF":
+        Light_W = "ON"
+        Button_Counter +=1
+        txt="Button_W_switch: White ON"
+        ColorSollwerte = [Brightness, Brightness, Brightness]
+    elif Light_W == "ON" and Light_R == "OFF":
+        Light_W = "OFF"
+        Button_Counter +=1
+        txt="Button_W_switch: White OFF"
+        ColorSollwerte = [0, 0, 0]
+    else:
+        txt="Button_W_switch: Else Case ERROR Red=" + Light_R + " white="+Light_W
+    debug(2, Button_Counter, txt)
+    set_JSON(Light_W, Light_R)
+
+
+def Button_R_switch():
+    global Light_W
+    global Light_R
+    global ColorSollwerte
+    global Brightness
+    global Button_Counter
+    txt=Button_R_switch
+    if Light_R == "OFF" and Light_W == "OFF":
+        Light_R = "ON"
+        Button_Counter +=1
+        txt="Button_R_switch: Red ON"
+        ColorSollwerte = [Brightness, 0, 0]
+    elif Light_R == "OFF" and Light_W == "ON":
+        Light_W = "OFF"
+        Light_R = "ON"
+        Button_Counter +=1
+        txt="Button_R_switch: Red over White ON"
+        ColorSollwerte = [Brightness, 0, 0]  # TODO check if this is right
+    elif Light_R == "ON":
+        Light_R = "OFF"
+        Button_Counter +=1
+        txt="Button_R_switch: Red OFF"
+        ColorSollwerte = [0, 0, 0]
+    else:
+        txt="Button_R_switch: Else Case ERROR Red=" + Light_R + " white="+Light_W
+    debug(2, Button_Counter, txt)
+    set_JSON(Light_W, Light_R)
+
+
+def ButtonDebounce(pin, currentState):
+    prevVal = None
+    for i in range(50):
+        currentVal = pin.value()
+        if prevVal != None and prevVal != currentVal:
+            debug(4,"x",f"Button bounce:{currentState}")
+            return currentState
+        prevVal = currentVal
+        sleep_ms(1)
+    if prevVal == None:
+        return currentState
+    if prevVal == 1:
+        if currentState == "ON":
+            currentState = "OFF"
+        else:
+            currentState = "ON"
+        debug(4,"x","Button status:{currentState}")
+        return currentState
+
+callback_w_blocked=False
+callback_r_blocked=False
+
+def Button_W_callback(pin):
+    global Button_W_Status
+    global callback_w_blocked
+    if callback_w_blocked==False:
+        callback_w_blocked=True
+        Button_W_Status = ButtonDebounce(pin, Button_W_Status)
+        Button_W_switch()
+        debug(4,"Button_W_callback", "IRQ called Button_W_Status="+str(Button_W_Status))
+        sleep_ms(debounceTime)
+        callback_w_blocked=False
+    else:
+        debug(4,"Button_W_callback", "IRQ blocked")
+
+
+def Button_R_callback(pin):
+    global Button_R_Status
+    global callback_r_blocked
+    if callback_r_blocked==False:
+        callback_r_blocked=True
+        Button_R_Status = ButtonDebounce(pin, Button_R_Status)
+        Button_R_switch()
+        debug(4,"Button_R_callback", "IRQ called Button_R_Status"+str(Button_R_Status))
+        sleep_ms(debounceTime)
+        callback_r_blocked=False
+    else:
+        debug(4,"Button_R_callback", "IRQ blocked")
+
+
+# init callback function and iterrupts
+Button_W = Button(pin=Pin(Button_W_PIN, mode=Pin.IN, pull=Pin.PULL_UP),
+                  trigger=Pin.IRQ_RISING, callback=Button_W_callback)
+Button_R = Button(pin=Pin(Button_R_PIN, mode=Pin.IN, pull=Pin.PULL_UP),
+                  trigger=Pin.IRQ_RISING, callback=Button_R_callback)
 
 # button part end =========================================================================================================
 
@@ -326,40 +368,46 @@ def RotaryController():
         # print(f"Brightness update ={Brightness} = {r_value}")
 
 
-def LEDfadeTimer(timer1):
+def LEDfadeTimer(timer0):
     strips_update_Brightness()
 
 
-def RotaryControllerTimer(timer2):
+def RotaryControllerTimer(timer1):
     RotaryController()
 
+
+def WifiTimer(timer2):
+    (wifi_status, wifi_ssid, wifi_ip) = class_wifi_connection.try_wifi_connect()
+
+
 def stop_all():
+    timer0.deinit()
+    timer1.deinit()
+    timer2.deinit()
     Strip1.SetColor(0, 1023, 0)  # give me some light that init is done ;-)
-    sleep_ms(500)
+    sleep_ms(1500)
     Strip1.SetColor(0, 1023, 1023)
-    sleep_ms(500)
+    sleep_ms(1500)
     Strip1.SetColor(0, 0, 0)
     # shut it down
     global run_webserver
     run_webserver = False
-    timer2.deinit()
-    timer1.deinit()
-    import get_wifi_connection
-
-    global wifi
-    get_wifi_connection.disconnect_wifi()
-
-
+    import class_wifi_connection
+    class_wifi_connection.disconnect()
 
 
 # Run LED Fading via timer interrupt (smoother than MainLoop)
 print("Start Fade Timer")
-timer1 = machine.Timer(0)
-timer1.init(period=53, mode=machine.Timer.PERIODIC, callback=LEDfadeTimer)
+timer0 = Timer(0)
+timer0.init(period=53, mode=Timer.PERIODIC, callback=LEDfadeTimer)
 
 print("Start RotaryController Timer")
-timer2 = machine.Timer(1)
-timer2.init(period=59, mode=machine.Timer.PERIODIC, callback=RotaryControllerTimer)
+timer1 = Timer(1)
+timer1.init(period=59, mode=Timer.PERIODIC, callback=RotaryControllerTimer)
+
+global timer2
+timer2 = Timer(2)
+timer2.init(period=60000, mode=Timer.PERIODIC, callback=WifiTimer)
 
 
 get_websocket()
@@ -376,13 +424,12 @@ led.value(1)
 toggle = 1
 cnt = 0
 print("entering mainloop")
-import time
 
 Strip1.SetColor(0, 1023, 0)  # give me some green light that init is done ;-)
-sleep_ms(200)
+sleep_ms(1500)
 Strip1.SetColor(0, 0, 0)
 
-while True:
+# while True:
 #    led.value(toggle)
 #    do_a_blink(toggle)
 #    sleep_ms(200)
@@ -403,27 +450,28 @@ while True:
 #        else:
 #            toggle = 0
 #            gc.collect()
-    do_a_blink(0)
-    print ("colorwheel R")
-    Strip1.SetColor(1023,0,0)
-    sleep_ms(1000)
-    do_a_blink(1)
-    print ("colorwheel G")
-    Strip1.SetColor(0,1023,0)
-    sleep_ms(1000)
-    do_a_blink(0)
-    print ("colorwheel B")
-    Strip1.SetColor(0,0,1023)
-    sleep_ms(1000)
-    print ("colorwheel White")
-    Strip1.SetColor(1023,1023,1023)
-    sleep_ms(1000)
-    print ("colorwheel Black")
-    Strip1.SetColor(1023,1023,1023)
-    sleep_ms(1000)
-    print ("colorwheel White")
-    Strip1.SetColor(1023,1023,1023)
-    sleep_ms(1000)
-    print ("colorwheel Black")
-    Strip1.SetColor(1023,1023,1023)
-    sleep_ms(1000)
+# do_a_blink(0)
+# print ("colorwheel R")
+# Strip1.SetColor(1023,0,0)
+# sleep_ms(1000)
+# do_a_blink(1)
+# print ("colorwheel G")
+# Strip1.SetColor(0,1023,0)
+# sleep_ms(1000)
+# do_a_blink(0)
+# print ("colorwheel B")
+# Strip1.SetColor(0,0,1023)
+# sleep_ms(1000)
+# print ("colorwheel White")
+# Strip1.SetColor(1023,1023,1023)
+# sleep_ms(1000)
+# print ("colorwheel Black")
+# Strip1.SetColor(1023,1023,1023)
+# sleep_ms(1000)
+# print ("colorwheel White")
+# Strip1.SetColor(1023,1023,1023)
+# sleep_ms(1000)
+# print ("colorwheel Black")
+# Strip1.SetColor(1023,1023,1023)
+# sleep_ms(1000)
+
