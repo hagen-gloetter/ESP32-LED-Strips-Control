@@ -2,8 +2,9 @@ import ujson
 import network
 from network import WLAN
 import machine
+from machine import Timer
 import sys
-import time
+from time import sleep_ms
 
 class WifiConnect ():
     """ Class to connect your ESP32 to local Wifi
@@ -49,7 +50,10 @@ class WifiConnect ():
             list = [self.wifi_status, self.wifi_ssid, self.wifi_ip]
             return (list)
 
-    def try_wifi_connect(self, ssid, pwd):
+    def try_wifi_connect(self, ssid=None, pwd=None):
+        if ssid == None:
+            ssid=self.wifi_ssid
+            pwd=self.wifi_pw
         try:
             self.wifi.connect(ssid, pwd)
             while not self.wifi.isconnected():
@@ -69,6 +73,8 @@ class WifiConnect ():
         list = [self.wifi_status, self.wifi_ssid, self.wifi_ip]
         return (list)
 
+
+        
     def check_connection(self):
         print("check_connection called")
         if self.wifi_ssid == "offline":
@@ -83,16 +89,36 @@ class WifiConnect ():
         list = [self.wifi_status, self.wifi_ssid, self.wifi_ip]
         return (list)
 
+    def is_connected(self):
+        print("is_connected called")
+        (wifi_status, wifi_ssid, wifi_ip) = self.wifi.check_connection()
+        list = [self.wifi_status, self.wifi_ssid, self.wifi_ip]
+        return (list)
+
     def disconnect(self):
         print("disconnect called")
         self.wifi.disconnect()
 
+    def stop_all(self):
+        print("disconnect called")
+        self.wifi.disconnect()
+
+
 
 def main():
-    wifi = WifiConnect()
-    (wifi_status, wifi_ssid, wifi_ip) = wifi.connect()
-    (wifi_status, wifi_ssid, wifi_ip) = wifi.check_connection()
+    wifi = WifiConnect() # Init the class
+    (wifi_status, wifi_ssid, wifi_ip) = wifi.connect()  # connect to wifi
+    i=0
+    while i==0:
+        list = wifi.check_connection()
+        for item in list:
+            print (item)
+        sleep_ms(3000)
+        
     wifi.disconnect()
+
 if __name__ == '__main__':
     sys.exit(main())
+
+
 
