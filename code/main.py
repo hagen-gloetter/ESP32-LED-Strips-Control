@@ -29,8 +29,8 @@ CPU_Speed = machine.freq()
 # machine.freq(int(CPU_Speed / 2)) # Brown Out Protection
 # print(f"machine.freq={CPU_Speed}")
 # Buttons
-Button_W_PIN = const(13)
-Button_R_PIN = const(10)
+Button_W_PIN = const(10)
+Button_R_PIN = const(13)
 Button_W_Status = "OFF"
 Button_R_Status = "OFF"
 Button_Counter = 0
