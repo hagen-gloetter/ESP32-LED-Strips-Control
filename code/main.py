@@ -4,7 +4,7 @@ from rotary_encoder_class_2 import RotaryIRQ
 from web_html import web_css
 from web_html import web_page
 from pwm_class import LEDStrip
-from debounce_class import Button
+from class_debounce import debounced_Button
 from web_html import web_page, web_css
 from time import sleep_ms
 from machine import Pin
@@ -294,43 +294,9 @@ def Button_R_switch():
     set_JSON(Light_W, Light_R)
 
 
-def ButtonDebounce(pin, currentState):
-    prevVal = None
-    for i in range(50):
-        currentVal = pin.value()
-        if prevVal != None and prevVal != currentVal:
-            debug(4, "x", f"Button bounce:{currentState}")
-            return currentState
-        prevVal = currentVal
-        sleep_ms(1)
-    if prevVal == None:
-        return currentState
-    if prevVal == 1:
-        if currentState == "ON":
-            currentState = "OFF"
-        else:
-            currentState = "ON"
-        debug(4, "x", "Button status:{currentState}")
-        return currentState
-
-
-def Button_W_callback(pin):
-    global Button_W_Status
-    debug(4, "Button_W_callback", " IRQ called Button_W_callback ")
-    Button_W_switch()
-
-
-def Button_R_callback(pin):
-    global Button_R_Status
-    debug(4, "Button_R_callback", " IRQ called Button_R_callback ")
-    Button_R_switch()
-
-
 # init callback function and iterrupts
-Button_W = Button(pin=Pin(Button_W_PIN, mode=Pin.IN, pull=Pin.PULL_UP),
-                  trigger=Pin.IRQ_FALLING, callback=Button_W_callback)
-Button_R = Button(pin=Pin(Button_R_PIN, mode=Pin.IN, pull=Pin.PULL_UP),
-                  trigger=Pin.IRQ_FALLING, callback=Button_R_callback)
+Button_W = debounced_Button(13)
+Button_R = debounced_Button(10)
 
 # button part end =========================================================================================================
 
@@ -359,6 +325,24 @@ def LEDfadeTimer(timer0):
 def RotaryControllerTimer(timer1):
     RotaryController()
 
+def ButtonDebounceTimer(timer0):
+    global Button_W
+    global Button_R
+    global Button_W_Status
+    global Button_R_Status
+    b3 = Button_W.get_oldstatus()
+    b4 = Button_R.get_oldstatus()
+    b1 = Button_W.get_status()
+    b2 = Button_R.get_status()
+    if b3 != b1 :
+        print(f"Button_W_Status={Button_W_Status}, Button_R_Status={Button_R_Status}")
+        Button_W_Status=b1
+        Button_W_switch()
+    if  b4 != b2:
+        print(f"Button_W_Status={Button_W_Status}, Button_R_Status={Button_R_Status}")
+        Button_R_Status=b2
+        Button_R_switch()
+
 
 def stop_all():
     global wifi
@@ -383,6 +367,12 @@ timer0.init(period=53, mode=Timer.PERIODIC, callback=LEDfadeTimer)
 print("Start RotaryController Timer")
 timer1 = Timer(1)
 timer1.init(period=59, mode=Timer.PERIODIC, callback=RotaryControllerTimer)
+
+print("Start Button Debounce Timer")
+timer2 = Timer(2)
+timer2.init(period=10, mode=Timer.PERIODIC, callback=ButtonDebounceTimer)
+
+
 
 get_websocket()
 
@@ -411,50 +401,4 @@ while i == 0:
     for item in list:
         if DebugLevel > 2:
             print(item)
-    sleep_ms(10000)
-
-#    led.value(toggle)
-#    do_a_blink(toggle)
-#    sleep_ms(200)
-#    led.value(0)
-
-#    sleep_ms(10)
-
-#    cnt += 1
-#    machine.idle()
-#    time1=time.time()
-#    thread_webserver(4,"webserver")
-#    print ("RUNTIME: " , str( (time.time() - time1) ))
-#    if cnt == 60000:
-#        print ("main loop")
-#        cnt = 0
-#       if toggle == 0:
-#            toggle = 1
-#        else:
-#            toggle = 0
-#            gc.collect()
-# do_a_blink(0)
-# print ("colorwheel R")
-# Strip1.SetColor(1023,0,0)
-# sleep_ms(1000)
-# do_a_blink(1)
-# print ("colorwheel G")
-# Strip1.SetColor(0,1023,0)
-# sleep_ms(1000)
-# do_a_blink(0)
-# print ("colorwheel B")
-# Strip1.SetColor(0,0,1023)
-# sleep_ms(1000)
-# print ("colorwheel White")
-# Strip1.SetColor(1023,1023,1023)
-# sleep_ms(1000)
-# print ("colorwheel Black")
-# Strip1.SetColor(1023,1023,1023)
-# sleep_ms(1000)
-# print ("colorwheel White")
-# Strip1.SetColor(1023,1023,1023)
-# sleep_ms(1000)
-# print ("colorwheel Black")
-# Strip1.SetColor(1023,1023,1023)
-# sleep_ms(1000)
-
+    sleep_ms(60000) # check connection every 60s
