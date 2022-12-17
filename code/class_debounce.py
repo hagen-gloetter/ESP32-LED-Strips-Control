@@ -19,6 +19,8 @@ class debounced_Button():
         self.cnt = 0
         self.debounceTime = 5  # x cycles have to be done
         self.oldstatus = self.status
+        self.longpress = 0 
+        self.xtremelongpress = 0 
 
     def get_status(self):
         # Button has to be pressed 5 cycles
@@ -26,16 +28,28 @@ class debounced_Button():
             self.cnt += 1
         if self.pin.value() == 1:  # PULL_UP -> 1 = not pressed
             self.cnt = 0
+            self.longpress = 0
+            self.xtremelongpress = 0 
         if self.cnt == self.debounceTime:  # button toggle
             self.status = self.togglebutton()
             self.oldstatus = self.status
-        if self.cnt >= self.debounceTime*100:
+        if self.cnt >= self.debounceTime*100: # default 50*100 = 5 s
             print("button longpress")
-            self.cnt = self.debounceTime*2  # prevent buffer overflow
+            self.longpress += 1
+        if self.cnt >= self.debounceTime*200: # default 50*200 = 10 s
+            print("button xtremelongpress")
+            self.xtremelongpress += 1 
+            self.cnt = self.debounceTime*500  # prevent buffer overflow
         return self.status
 
     def get_oldstatus(self):
         return self.oldstatus
+
+    def get_longpress(self):
+        return self.longpress
+
+    def get_xtremelongpress(self):
+        return self.xtremelongpress
 
     def togglebutton(self):
         if self.status == "OFF":
@@ -44,10 +58,8 @@ class debounced_Button():
             self.status = "OFF"
         return self.status
 
-
 global Button1
 global Button2
-
 
 def ButtonDebounceTimer(timer0):
     global Button1
@@ -58,6 +70,11 @@ def ButtonDebounceTimer(timer0):
     b2 = Button2.get_status()
     if b3 != b1 or b4 != b2:
         print(f"b1={b1}, b2={b2}")
+    if Button1.get_longpress() > 0 :
+        print("Button1 longpress")
+    if Button2.get_longpress() > 0 :
+        print("Button2 longpress")
+
 
 
 def main():
@@ -65,15 +82,14 @@ def main():
     global Button2
     Button1 = debounced_Button(13)
     Button2 = debounced_Button(10)
-    viaTimer = False
-    if viaTimer == True:
+    viaTimer=False
+    if viaTimer==True:
         print("Start Timer")
         timer2 = Timer(2)
-        timer2.init(period=10, mode=Timer.PERIODIC,
-                    callback=ButtonDebounceTimer)
-    if viaTimer == False:
+        timer2.init(period=10, mode=Timer.PERIODIC, callback=ButtonDebounceTimer)
+    if viaTimer==False:
         i = 0
-        while i == 0:
+        while i==0:
             b3 = Button1.get_oldstatus()
             b4 = Button2.get_oldstatus()
             b1 = Button1.get_status()
@@ -81,9 +97,12 @@ def main():
             time.sleep_ms(10)
             if b3 != b1 or b4 != b2:
                 print(f"b1={b1}, b2={b2}")
-
-
+            if Button1.get_longpress() > 0 :
+                print("Button1 longpress")
+            if Button2.get_longpress() > 0 :
+                print("Button2 longpress")
 if __name__ == '__main__':
     sys.exit(main())
 
 print('Button init done')
+

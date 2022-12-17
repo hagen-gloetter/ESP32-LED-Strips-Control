@@ -19,28 +19,33 @@ def web_page():
     <table>
       <tr>
         <td><p>Licht Rot</p></td>
-        <td><p id="button_red">OFF</p></td>
+        <td><p id="button_red"></p></td>
         <td><p><a href="/?red=on"><button class="button">ON</button></a><a href="/?red=off"><button class="button button2">OFF</button></a> </p></td>
       </tr>
       <tr>
         <td><p>Licht Weiss</p></td>
-        <td><p id="button_white">OFF</p></td>
+        <td><p id="button_white"></p></td>
         <td><p><a href="/?white=on"><button class="button">ON</button></a><a href="/?white=off"><button class="button button2">OFF</button></a> </p></td>
       </tr>
       <tr>
         <td><p>Helligkeit</p></td>
-        <td><p id="LED_brightness">1024</p></td>
+        <td><p id="LED_brightness"></p></td>
         <td><p></p></td>
       </tr>
       <tr>
         <td><p>Dach</p></td>
-        <td><p id="LED_roof">NA</p></td>
+        <td><p id="LED_roof">&nbsp; NA &nbsp;</p></td>
         <td><p>Dach</p></td>
       </tr>
       <tr>
         <td><p>Test LED</p></td>
         <td><p ></p></td>
-        <td><p><a href="/?led=on">OFF<button class="button">ON</button></a><a href="/?led=off"><button class="button button2">OFF</button></a></p></td>
+        <td><p><a href="/?led=on"><button class="button">ON</button></a><a href="/?led=off"><button class="button button2">OFF</button></a></p></td>
+      </tr>
+      <tr>
+        <td><p>Network</p></td>
+        <td></td>
+        <td><p id="network_ip">  </p><p id="network_ssid"></p></td>
       </tr>
 
     </table>
@@ -57,13 +62,13 @@ def web_page():
               // The request has been completed successfully
               // console.log(xhr.responseText);
               myobj = JSON.parse(xhr.responseText);
-              document.getElementById("button_red").innerText =
-                myobj.button_red;
-              document.getElementById("button_white").innerText =
-                myobj.button_white;
-              document.getElementById("LED_brightness").innerText =
-                myobj.LED_brightness;
-              document.getElementById("LED_roof").innerText = myobj.LED_roof;
+              document.getElementById("button_red").innerText     = myobj.button_red;
+              document.getElementById("button_white").innerText   = myobj.button_white;
+              document.getElementById("LED_brightness").innerText = myobj.LED_brightness;
+              document.getElementById("LED_roof").innerText       = myobj.LED_roof;
+              document.getElementById("network_ip").innerText     = myobj.network_ip;
+              document.getElementById("network_ssid").innerText   = myobj.network_ssid;
+
             } else {
               console.log("Oh no! There has been an error with the request!");
             }

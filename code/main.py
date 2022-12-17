@@ -2,7 +2,6 @@
 
 from rotary_encoder_class_2 import RotaryIRQ
 from web_html import web_css
-from web_html import web_page
 from pwm_class import LEDStrip
 from class_debounce import debounced_Button
 from web_html import web_page, web_css
@@ -37,6 +36,10 @@ Button_Counter = 0
 Light_W = "OFF"  # white
 Light_R = "OFF"  # red
 run_webserver = True
+# wifi variables
+wifi_status = None
+wifi_ssid = None
+wifi_ip = None
 
 
 # setup LED Stripes
@@ -181,12 +184,19 @@ JSONdata = """
 
 def set_JSON(status1, status2):
     global JSONdata
+    global Light_R
+    global Light_W
+    global wifi_status
+    global wifi_ssid
+    global wifi_ip
     global Brightness
     s1 = '{\n"button_red":"' + str(Light_R) + '",\n'
     s2 = '"button_white":"' + str(Light_W) + '",\n'
     s3 = '"LED_brightness":"' + str(Brightness) + '",\n'
-    s4 = '"LED_roof":"' + "NA" + '"\n}\n'
-    JSONdata = s1 + s2 + s3 + s4
+    s4 = '"network_ip":"' + str(wifi_ip) + '",\n'
+    s5 = '"network_ssid":"' + str(wifi_ssid) + " " + str(wifi_status) + '",\n'
+    s6 = '"LED_roof":"' + "NA" + '"\n}\n'
+    JSONdata = s1 + s2 + s3 + s4 + s5 + s6
 
 
 # Webserver end =========================================================================================================
@@ -330,6 +340,10 @@ def ButtonDebounceTimer(timer0):
     global Button_R
     global Button_W_Status
     global Button_R_Status
+    global Light_W
+    global Light_R
+    global ColorSollwerte
+    global Brightness
     b3 = Button_W.get_oldstatus()
     b4 = Button_R.get_oldstatus()
     b1 = Button_W.get_status()
@@ -342,6 +356,21 @@ def ButtonDebounceTimer(timer0):
         print(f"Button_W_Status={Button_W_Status}, Button_R_Status={Button_R_Status}")
         Button_R_Status=b2
         Button_R_switch()
+    if Button_W.get_longpress() > 0 : # Reset to full white Light
+        print("Button_W longpress -  # Reset to full white Light")
+        Light_W = "ON"
+        Light_R = "OFF"
+        Brightness=1023
+        ColorSollwerte = [Brightness, Brightness, Brightness]
+    if Button_R.get_longpress() > 0 :  # Reset to full red Light
+        print("Button_R longpress -  # Reset to full red Light")
+        Light_R = "ON"
+        Light_W = "OFF"
+        Brightness = 1023
+        ColorSollwerte = [Brightness, 0, 0]
+
+
+
 
 
 def stop_all():
@@ -390,16 +419,16 @@ cnt = 0
 print("entering mainloop")
 
 Strip1.SetColor(0, 1023, 0)  # give me some green light that init is done ;-)
-sleep_ms(1500)
+sleep_ms(2000)
 Strip1.SetColor(0, 0, 0)
 
 # while True:
 
 i = 0
 while i == 0:
-    list = wifi.check_connection()
-    for item in list:
-        if DebugLevel > 2:
-            print(item)
+    (wifi_status, wifi_ssid, wifi_ip) = wifi.check_connection()
+#if DebugLevel > 2:
+    debug(2,1,wifi_status)
+    debug(2,1,wifi_ssid)
+    debug(2,1,wifi_ip)
     sleep_ms(60000) # check connection every 60s
-
