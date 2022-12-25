@@ -1,18 +1,21 @@
-# For more details and step by step guide visit: Microcontrollerslab.com
+# Lighting for our Observatory with LED-Stripes
+# Observatory: https://www.sternwarte-hoefingen.de
+# Code by Hagen and Ramona Glötter
+# Source and Docs: https://github.com/hagen-gloetter/LED-Strips-ESP32
 
-from rotary_encoder_class_2 import RotaryIRQ
-from web_html import web_css
-from pwm_class import LEDStrip
-from class_debounce import debounced_Button
-from web_html import web_page, web_css
+# System Includes
 from time import sleep_ms
-from machine import Pin
-from machine import Timer
+from machine import Pin, Timer
 import _thread
 import time
 import machine
 import gc
 import network
+# Custom Includes
+from rotary_encoder_class_2 import RotaryIRQ
+from pwm_class import LEDStrip
+from class_debounce import debounced_Button
+from web_html import web_page, web_css
 import class_wifi_connection
 
 try:
@@ -335,6 +338,7 @@ def LEDfadeTimer(timer0):
 def RotaryControllerTimer(timer1):
     RotaryController()
 
+
 def ButtonDebounceTimer(timer0):
     global Button_W
     global Button_R
@@ -348,29 +352,28 @@ def ButtonDebounceTimer(timer0):
     b4 = Button_R.get_oldstatus()
     b1 = Button_W.get_status()
     b2 = Button_R.get_status()
-    if b3 != b1 :
-        print(f"Button_W_Status={Button_W_Status}, Button_R_Status={Button_R_Status}")
-        Button_W_Status=b1
+    if b3 != b1:
+        print(
+            f"Button_W_Status={Button_W_Status}, Button_R_Status={Button_R_Status}")
+        Button_W_Status = b1
         Button_W_switch()
-    if  b4 != b2:
-        print(f"Button_W_Status={Button_W_Status}, Button_R_Status={Button_R_Status}")
-        Button_R_Status=b2
+    if b4 != b2:
+        print(
+            f"Button_W_Status={Button_W_Status}, Button_R_Status={Button_R_Status}")
+        Button_R_Status = b2
         Button_R_switch()
-    if Button_W.get_longpress() > 0 : # Reset to full white Light
+    if Button_W.get_longpress() > 0:  # Reset to full white Light
         print("Button_W longpress -  # Reset to full white Light")
         Light_W = "ON"
         Light_R = "OFF"
-        Brightness=1023
+        Brightness = 1023
         ColorSollwerte = [Brightness, Brightness, Brightness]
-    if Button_R.get_longpress() > 0 :  # Reset to full red Light
+    if Button_R.get_longpress() > 0:  # Reset to full red Light
         print("Button_R longpress -  # Reset to full red Light")
         Light_R = "ON"
         Light_W = "OFF"
         Brightness = 1023
         ColorSollwerte = [Brightness, 0, 0]
-
-
-
 
 
 def stop_all():
@@ -402,7 +405,6 @@ timer2 = Timer(2)
 timer2.init(period=10, mode=Timer.PERIODIC, callback=ButtonDebounceTimer)
 
 
-
 get_websocket()
 
 # turn off LEDs
@@ -427,8 +429,8 @@ Strip1.SetColor(0, 0, 0)
 i = 0
 while i == 0:
     (wifi_status, wifi_ssid, wifi_ip) = wifi.check_connection()
-#if DebugLevel > 2:
-    debug(2,1,wifi_status)
-    debug(2,1,wifi_ssid)
-    debug(2,1,wifi_ip)
-    sleep_ms(60000) # check connection every 60s
+# if DebugLevel > 2:
+    debug(2, 1, wifi_status)
+    debug(2, 1, wifi_ssid)
+    debug(2, 1, wifi_ip)
+    sleep_ms(60000)  # check connection every 60s
