@@ -12,8 +12,8 @@ import machine
 import gc
 import network
 # Custom Includes
-from rotary_encoder_class_2 import RotaryIRQ
-from pwm_class import LEDStrip
+from class_rotary_encoder import RotaryIRQ
+from class_pwm import LEDStrip
 from class_debounce import debounced_Button
 from web_html import web_page, web_css
 import class_wifi_connection
@@ -31,8 +31,8 @@ CPU_Speed = machine.freq()
 # machine.freq(int(CPU_Speed / 2)) # Brown Out Protection
 # print(f"machine.freq={CPU_Speed}")
 # Buttons
-Button_W_PIN = const(13)
-Button_R_PIN = const(10)
+Button_W_PIN = 13
+Button_R_PIN = 10
 Button_W_Status = "OFF"
 Button_R_Status = "OFF"
 Button_Counter = 0
