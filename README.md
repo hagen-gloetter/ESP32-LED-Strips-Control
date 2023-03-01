@@ -1,4 +1,4 @@
-# LED-Strips-ESP32
+# ESP32 LED-Strips Control
 Lighting for our Observatory with LED-Stripes
 
 What we need:
