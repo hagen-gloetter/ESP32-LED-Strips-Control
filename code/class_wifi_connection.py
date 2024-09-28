@@ -4,6 +4,7 @@ from network import WLAN
 import machine
 from machine import Timer
 from time import sleep_ms
+import sys # only for testing
 
 class WifiConnect:
     """Class to connect your ESP32 to local Wifi
@@ -117,18 +118,17 @@ class WifiConnect:
         print("stop_all called")
         self.disconnect()
 
-#def main():
-#    wifi = WifiConnect()  # Init the class
-#    (wifi_status, wifi_ssid, wifi_ip) = wifi.connect()  # connect to wifi
-#    i = 0
-#    while i == 0:
-#        list = wifi.check_connection()
-#        for item in list:
-#            print(item)
-#        sleep_ms(3000)
+def main():
+    wifi = WifiConnect()  # Init the class
+    (wifi_status, wifi_ssid, wifi_ip) = wifi.connect()  # connect to wifi
+    i = 0
+    while i == 0:
+        list = wifi.check_connection()
+        for item in list:
+            print(item)
+        sleep_ms(3000)
+    wifi.disconnect()
 
-#    wifi.disconnect()
-#
-#
-#if __name__ == "__main__":
-#    sys.exit(main())
+
+if __name__ == "__main__":
+    sys.exit(main())
