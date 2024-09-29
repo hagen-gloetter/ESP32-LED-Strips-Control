@@ -11,7 +11,7 @@ print("LEDStrip Class loaded")
 # LED3= 19, 18, 26
 
 class LEDStrip:
-    def __init__(self, R=0, G=0, B=0, GPIO1=27, GPIO2=25, GPIO3=32, GPIO4=17, GPIO5=21, GPIO6=22, GPIO7=19, GPIO8=18, GPIO9=26 ):
+    def __init__(self, R=0, G=0, B=0, GPIO1=27, GPIO2=25, GPIO3=32):
         frequency = 7321  # Prime for no visible artefacts in eyes and cellphones
         self.R = R
         self.G = G

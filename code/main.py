@@ -12,7 +12,8 @@
 #   33 Clk
 #   34 DT
 #   14 SW
-# DHT GPIO0 
+# DHT GPIO0
+
 
 # System Includes
 from time import sleep_ms
@@ -60,12 +61,12 @@ wifi_ip = None
 Brightness = 1024
 ColorRGB = [0, 0, 0]
 ColorSollwerte = [0, 0, 0]
-Fade_speed = 16
+Fade_speed = 16 
 
 # init LED Stripes
 # TODO  Listen übergeben
 Strip1 = LEDStrip(ColorRGB[0], ColorRGB[1], ColorRGB[2], 27, 25, 32)
-Strip2 = LEDStrip(ColorRGB[0], ColorRGB[1], ColorRGB[2], 17, 21, 22)
+Strip2 = LEDStrip(ColorRGB[0], ColorRGB[1], ColorRGB[2], 22, 21, 17)
 Strip3 = LEDStrip(ColorRGB[0], ColorRGB[1], ColorRGB[2], 19, 18, 26)
 Strip1.SetColor(ColorRGB[0], ColorRGB[1], ColorRGB[2])
 Strip2.SetColor(ColorRGB[0], ColorRGB[1], ColorRGB[2])
@@ -447,3 +448,5 @@ while i == 0:
     debug(2, 1, wifi_ssid)
     debug(2, 1, wifi_ip)
     sleep_ms(60000)  # check connection every 60s
+
+
