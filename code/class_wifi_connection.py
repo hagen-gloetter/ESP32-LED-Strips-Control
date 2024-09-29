@@ -3,8 +3,7 @@ import network
 from network import WLAN
 import machine
 from machine import Timer
-from time import sleep_ms
-import sys # only for testing
+import utime  # Verwende utime für Zeitmessung in MicroPython
 
 class WifiConnect:
     """Class to connect your ESP32 to local Wifi
@@ -65,10 +64,10 @@ class WifiConnect:
             pwd = self.wifi_pw
         try:
             self.wifi.connect(ssid, pwd)
-            timeout = 10000  # 10 seconds timeout
-            start_time = machine.time() * 1000
+            timeout = 10000  # 10 Sekunden Timeout
+            start_time = utime.ticks_ms()  # Millisekunden-Zähler
             while not self.wifi.isconnected():
-                if machine.time() * 1000 - start_time > timeout:
+                if utime.ticks_diff(utime.ticks_ms(), start_time) > timeout:
                     print("Connection timeout reached")
                     break
                 machine.idle()  # save power while waiting

@@ -17,10 +17,16 @@ val_old = r.value()
 isRotaryEncoder = True
 #print ("rotary_encoder loaded")
 
+# Debouncing function for switch
+def debounce(pin):
+    sleep_ms(50)  # Debounce time
+    return pin.value()
+
 def get_rotary_encoder():
     global isRotaryEncoder
     global sw
-    if sw.value() == 1:
+    # Switch toggling logic with debounce
+    if debounce(sw) == 1:
         isRotaryEncoder = not isRotaryEncoder
         if isRotaryEncoder == True:
             print('Rotary Encoder is now enabled.')

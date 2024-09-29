@@ -15,7 +15,8 @@ import os
 import machine
 
 print ("boot.py get_wifi_connection") 
-import get_wifi_connection
+import class_wifi_connection
 wifi=None
-get_wifi_connection.connect_wifi()
+#get_wifi_connection.connect()
+class_wifi_connection.WifiConnect()
 print ("boot.py done") 
