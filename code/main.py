@@ -3,6 +3,17 @@
 # Code by Hagen and Ramona Glötter
 # Source and Docs: https://github.com/hagen-gloetter/LED-Strips-ESP32
 
+
+# GPIO Pins:
+# LED1= 22, 21, 17
+# LED2= 27, 25, 32
+# LED3= 26, 18, 19
+# Rotary
+#   33 Clk
+#   34 DT
+#   14 SW
+# DHT GPIO0 
+
 # System Includes
 from time import sleep_ms
 from machine import Pin, Timer
@@ -55,8 +66,10 @@ Fade_speed = 16
 # TODO  Listen übergeben
 Strip1 = LEDStrip(ColorRGB[0], ColorRGB[1], ColorRGB[2], 27, 25, 32)
 Strip2 = LEDStrip(ColorRGB[0], ColorRGB[1], ColorRGB[2], 17, 21, 22)
+Strip3 = LEDStrip(ColorRGB[0], ColorRGB[1], ColorRGB[2], 19, 18, 26)
 Strip1.SetColor(ColorRGB[0], ColorRGB[1], ColorRGB[2])
 Strip2.SetColor(ColorRGB[0], ColorRGB[1], ColorRGB[2])
+Strip3.SetColor(ColorRGB[0], ColorRGB[1], ColorRGB[2])
 
 r = RotaryIRQ(
     pin_num_clk=33,
@@ -106,11 +119,11 @@ def thread_webserver(delay, name):
         #    while True:
         #    sleep_ms(100)
         #   Init Websocket
-        # print webpage =========================================================================================================
-        #        print('Before accept')
-        conn, addr = websocket.accept()
-        #        print('Got a connection from %s' % str(addr))
         try:
+            # print webpage =========================================================================================================
+            #        print('Before accept')
+            conn, addr = websocket.accept()
+            #        print('Got a connection from %s' % str(addr))
             request = conn.recv(1024)
             request = str(request)
             machine.idle()
