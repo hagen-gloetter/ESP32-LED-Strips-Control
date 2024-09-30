@@ -26,17 +26,17 @@ def get_rotary_encoder():
     global isRotaryEncoder
     global sw
     # Switch toggling logic with debounce
-    if debounce(sw) == 1:
-        isRotaryEncoder = not isRotaryEncoder
-        if isRotaryEncoder == True:
-            print('Rotary Encoder is now enabled.')
-        else:
-            print('Rotary Encoder is now disabled.')
-
-    if isRotaryEncoder == True:
-        global val_old
-        val_new = r.value()
-        if val_old != val_new:
-            val_old = val_new
-            print('result = {}'.format(val_new))
-            return val_new
+#    if debounce(sw) == 1:
+#        isRotaryEncoder = not isRotaryEncoder
+#        if isRotaryEncoder == True:
+#            print('Rotary Encoder is now enabled.')
+#        else:
+#            print('Rotary Encoder is now disabled.')
+#
+#    if isRotaryEncoder == True:
+    global val_old
+    val_new = r.value()
+    if val_old != val_new:
+        val_old = val_new
+        print('result = {}'.format(val_new))
+        return val_new

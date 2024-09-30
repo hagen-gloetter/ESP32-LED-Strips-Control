@@ -82,6 +82,7 @@ def main():
     global Button2
     Button1 = debounced_Button(13)
     Button2 = debounced_Button(10)
+    Button3 = debounced_Button(14)
     viaTimer=False
     if viaTimer==True:
         print("Start Timer")
@@ -90,7 +91,7 @@ def main():
     if viaTimer==False:
         i = 0
         while i==0:
-            b3 = Button1.get_oldstatus()
+            b3 = Button1.get_oldstatus() # achtung erst den alten Status holen 
             b4 = Button2.get_oldstatus()
             b1 = Button1.get_status()
             b2 = Button2.get_status()
@@ -105,4 +106,5 @@ if __name__ == '__main__':
     sys.exit(main())
 
 print('Button init done')
+
 

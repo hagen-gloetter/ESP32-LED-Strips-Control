@@ -29,6 +29,7 @@ from class_pwm import LEDStrip
 from class_debounce import debounced_Button
 from web_html import web_page, web_css
 import class_wifi_connection
+import gc  # Import garbage collection module
 
 try:
     import usocket as socket
@@ -45,8 +46,10 @@ CPU_Speed = machine.freq()
 # Buttons
 Button_W_PIN = 13
 Button_R_PIN = 10
+Button_D_PIN = 14
 Button_W_Status = "OFF"
 Button_R_Status = "OFF"
+Button_D_Status = "OFF"
 Button_Counter = 0
 Light_W = "OFF"  # white
 Light_R = "OFF"  # red
@@ -128,6 +131,32 @@ def thread_webserver(delay, name):
             request = conn.recv(1024)
             request = str(request)
             machine.idle()
+
+            # LED Control: Parse GET Parameters for RGB
+            r_index = request.find('/?r=')
+            g_index = request.find('&g=')
+            b_index = request.find('&b=')
+            if r_index != -1 and g_index != -1 and b_index != -1:
+                # Extract RGB values from the URL
+                try:
+                    r_value = int(request[r_index+4 : g_index])
+                    g_value = int(request[g_index+3 : b_index])
+                    b_value = int(request[b_index+3 : b_index+6])
+                    
+                    # Validate if the values are in the range of 0 to 255
+                    if 0 <= r_value <= 255 and 0 <= g_value <= 255 and 0 <= b_value <= 255:
+                        print(f"Received valid RGB values: R={r_value}, G={g_value}, B={b_value}")
+                        ColorSollwerte = [r_value, g_value, b_value]  # Set the color for the LED Strip
+                        
+                        # Update the LED strip with the new color
+                        Strip1.SetColor(ColorSollwerte[0], ColorSollwerte[1], ColorSollwerte[2])
+                        Strip2.SetColor(ColorSollwerte[0], ColorSollwerte[1], ColorSollwerte[2])
+                    else:
+                        print("Invalid RGB values received. Ignoring request.")
+                except ValueError:
+                    print("Invalid RGB input detected. Could not convert to integers.")
+            
+            # Handle LED toggling (existing logic for red, white, and test LEDs)
             #    print('Content = %s' % request)
             led_on = request.find("/?led=on")
             if led_on == 6:
@@ -187,6 +216,8 @@ def thread_webserver(delay, name):
                 conn.close()
         except:
             conn.close()
+        # Garbage collection nach jeder Anfrage
+        gc.collect()  # Speicher freigeben
 
 
 JSONdata = """
@@ -194,7 +225,10 @@ JSONdata = """
     "button_red": "-x-",
     "button_white": "-x-",
     "LED_brightness": "-x-",
-    "LED_roof": "-x-"
+    "LED_roof": "-x-",
+    "red":"0",
+    "green":"0",
+    "blue":"0"
 }
 """
 
@@ -207,13 +241,19 @@ def set_JSON(status1, status2):
     global wifi_ssid
     global wifi_ip
     global Brightness
+    global ColorSollwerte
     s1 = '{\n"button_red":"' + str(Light_R) + '",\n'
     s2 = '"button_white":"' + str(Light_W) + '",\n'
     s3 = '"LED_brightness":"' + str(Brightness) + '",\n'
     s4 = '"network_ip":"' + str(wifi_ip) + '",\n'
     s5 = '"network_ssid":"' + str(wifi_ssid) + " " + str(wifi_status) + '",\n'
-    s6 = '"LED_roof":"' + "NA" + '"\n}\n'
-    JSONdata = s1 + s2 + s3 + s4 + s5 + s6
+    s6 = '"LED_roof":"' + "NA" + '",\n'
+    s7 = '"red":"' + str(ColorSollwerte[0]) + '",\n'
+    s8 = '"green":"' + str(ColorSollwerte[1]) + '",\n'
+    s9 = '"blue":"' + str(ColorSollwerte[2]) + '"\n'
+    s10=  '\n}\n'
+
+    JSONdata = s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8 + s9 + s10 
 
 
 # Webserver end =========================================================================================================
@@ -321,9 +361,10 @@ def Button_R_switch():
     set_JSON(Light_W, Light_R)
 
 
-# init callback function and iterrupts
-Button_W = debounced_Button(13)
-Button_R = debounced_Button(10)
+# init callback function and iterrupts to Debounced Buttons
+Button_W = debounced_Button(13)  # Weißer Lichtschalter
+Button_R = debounced_Button(10)  # Roter Lichtschalter
+Button_D = debounced_Button(14)  # Taster für den Rotary-Encoder (Drehgeber)
 
 # button part end =========================================================================================================
 
@@ -356,25 +397,32 @@ def RotaryControllerTimer(timer1):
 def ButtonDebounceTimer(timer0):
     global Button_W
     global Button_R
+    global Button_D
     global Button_W_Status
     global Button_R_Status
+    global Button_D_Status
     global Light_W
     global Light_R
     global ColorSollwerte
     global Brightness
-    b3 = Button_W.get_oldstatus()
-    b4 = Button_R.get_oldstatus()
-    b1 = Button_W.get_status()
-    b2 = Button_R.get_status()
-    if b3 != b1:
+
+    # Get current and old statuses of the buttons
+    b1_old = Button_W.get_oldstatus() # Achtung ERST alten Status abfragen !!!
+    b2_old = Button_R.get_oldstatus()
+    b3_old = Button_D.get_oldstatus()
+    b1_new = Button_W.get_status()
+    b2_new = Button_R.get_status()
+    b3_new = Button_D.get_status()
+    
+    if b1_old != b1_new:
         print(
             f"Button_W_Status={Button_W_Status}, Button_R_Status={Button_R_Status}")
-        Button_W_Status = b1
+        Button_W_Status = b1_new
         Button_W_switch()
-    if b4 != b2:
+    if b2_old != b2_new:
         print(
             f"Button_W_Status={Button_W_Status}, Button_R_Status={Button_R_Status}")
-        Button_R_Status = b2
+        Button_R_Status = b2_new
         Button_R_switch()
     if Button_W.get_longpress() > 0:  # Reset to full white Light
         print("Button_W longpress -  # Reset to full white Light")
@@ -388,6 +436,15 @@ def ButtonDebounceTimer(timer0):
         Light_W = "OFF"
         Brightness = 1023
         ColorSollwerte = [Brightness, 0, 0]
+
+
+    # Handle button press for Button_D (Rotary Encoder Button)
+    if b3_old != b3_new:
+        print(f"Button_D pressed: {b3_new}")
+        if b3_new == "ON":
+            print("Rotary Encoder Button ON")
+        else:
+            print("Rotary Encoder Button OFF")            
 
 
 def stop_all():
@@ -448,5 +505,7 @@ while i == 0:
     debug(2, 1, wifi_ssid)
     debug(2, 1, wifi_ip)
     sleep_ms(60000)  # check connection every 60s
+    # Garbage collection regelmäßig aufrufen
+    gc.collect()
 
 

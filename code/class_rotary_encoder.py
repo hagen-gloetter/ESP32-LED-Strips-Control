@@ -71,12 +71,12 @@ class RotaryIRQ(Rotary):
 #                print('Rotary Encoder is now enabled.')
 #            else:
 #                print('Rotary Encoder is now disabled.')
-        if sw.value() == 0:
-            isRotaryEncoder = not isRotaryEncoder
-            if isRotaryEncoder == True:
-                print('Rotary Encoder is now enabled.')
-            else:
-                print('Rotary Encoder is now disabled.')
+#        if sw.value() == 0:
+#            isRotaryEncoder = not isRotaryEncoder
+#            if isRotaryEncoder == True:
+#                print('Rotary Encoder is now enabled.')
+#            else:
+#                print('Rotary Encoder is now disabled.')
         if isRotaryEncoder == True:
 #            global val_old
             val_new = self.value()
