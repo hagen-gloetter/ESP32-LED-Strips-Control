@@ -3,7 +3,10 @@ import network
 from network import WLAN
 import machine
 from machine import Timer
-import utime  # Verwende utime fÃ¼r Zeitmessung in MicroPython
+import sys
+from time import sleep_ms
+import utime  # Verwende utime für Zeitmessung in MicroPython
+
 
 class WifiConnect:
     """Class to connect your ESP32 to local Wifi
@@ -39,11 +42,16 @@ class WifiConnect:
             return ("offline", "offline", "offline")
         else:
             print(f"connect wifi called with {fn_secrets}")
+            # print (wlan_json)
+            # print (type (wlan_json))
+            # for key in wlan_json.keys():
+            #    print (key)
             self.wifi = network.WLAN(network.STA_IF)
             self.wifi.active(True)
             self.wifi.disconnect()  # ensure we're disconnected
             nets = self.wifi.scan()
-
+            # print ("NETS: ",nets)
+            # print (type (nets))
             for ssid in wlan_json.keys():
                 if ssid in str(nets):
                     print(f"++++++++ Network {ssid} found!")
@@ -56,7 +64,10 @@ class WifiConnect:
                     ) = self.try_wifi_connect(ssid, pwd)
                     if self.wifi_status == "online":
                         break
-            return [self.wifi_status, self.wifi_ssid, self.wifi_ip]
+            list = [self.wifi_status, self.wifi_ssid, self.wifi_ip]
+            return list
+            
+            
 
     def try_wifi_connect(self, ssid=None, pwd=None):
         if ssid is None:
@@ -65,7 +76,7 @@ class WifiConnect:
         try:
             self.wifi.connect(ssid, pwd)
             timeout = 10000  # 10 Sekunden Timeout
-            start_time = utime.ticks_ms()  # Millisekunden-ZÃ¤hler
+            start_time = utime.ticks_ms()  # Millisekunden-Zähler
             while not self.wifi.isconnected():
                 if utime.ticks_diff(utime.ticks_ms(), start_time) > timeout:
                     print("Connection timeout reached")
@@ -83,12 +94,19 @@ class WifiConnect:
                 raise Exception("Connection failed")
 
         except Exception as e:
-            print(f"Failed to connect: {e}")
+            print(f"Failed to connect to any known network: {e}")
             self.wifi_status = "offline"
             self.wifi_ssid = "offline"
             self.wifi_ip = "offline"
             self.wifi.disconnect()  # ensure clean disconnect
         return [self.wifi_status, self.wifi_ssid, self.wifi_ip]
+
+    def get_wifi_status(self):
+        list = [self.wifi_status, self.wifi_ssid, self.wifi_ip]
+        return list
+
+    def isconnected(self):
+        return self.wifi.isconnected()
 
     def check_connection(self):
         print("check_connection called")
@@ -96,7 +114,9 @@ class WifiConnect:
             print("Attempting to connect to SSID:", self.wifi_ssid)
             self.connect()  # not connected at all
         elif not self.wifi.isconnected() or self.wifi_status == "offline":
-            print("Connection lost, trying to reconnect to SSID:", self.wifi_ssid)
+            # no more  more connected
+            self.wifi_status = "offline"
+            print("Connection lost, trying to reconnect to SSID: ", self.wifi_ssid)
             (self.wifi_status, self.wifi_ssid, self.wifi_ip) = self.try_wifi_connect(
                 self.wifi_ssid, self.wifi_pw
             )
@@ -104,7 +124,9 @@ class WifiConnect:
 
     def is_connected(self):
         print("is_connected called")
-        return [self.wifi_status, self.wifi_ssid, self.wifi_ip]
+        (wifi_status, wifi_ssid, wifi_ip) = self.wifi.check_connection()
+        list = [self.wifi_status, self.wifi_ssid, self.wifi_ip]
+        return list
 
     def disconnect(self):
         print("disconnect called")
@@ -116,6 +138,7 @@ class WifiConnect:
     def stop_all(self):
         print("stop_all called")
         self.disconnect()
+        #self.wifi.disconnect()
 
 def main():
     wifi = WifiConnect()  # Init the class
@@ -131,3 +154,4 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+
