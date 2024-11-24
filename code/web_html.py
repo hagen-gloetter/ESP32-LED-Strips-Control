@@ -28,7 +28,7 @@ def web_page():
       <tr>
         <td><p>Licht Weiss</p></td>
         <td><p id="button_white"></p></td>
-        <td><p><a href="/?white=on"><button class="button">ON</button></a><a href="/?white=off"><button class="button button2">OFF"></button></a></p></td>
+        <td><p><a href="/?white=on"><button class="button">ON</button></a><a href="/?white=off"><button class="button button2">OFF</button></a></p></td>
       </tr>
       <tr>
         <td><p>RGB Werte</p></td>
@@ -42,10 +42,26 @@ def web_page():
         </td>
       </tr>
       <tr>
-        <td><p>Aktuelle RGB Werte</p></td>
-        <td colspan="2"><p id="current_rgb">R: 0, G: 0, B: 0</p></td>
+        <td colspan="2"><p>Aktuelle RGB Werte</p></td>
+        <td colspan="2"><p id="current_rgb">R: 0, G: 0, B: 0</p><br><p id="LED_brightness">100</p></td>
+      </tr>
+      <tr>
+        <td colspan="2" rowspan="4"><p>Umgebung</p></td>
+      </tr>
+      <tr>
+        <td>Temperatur</td><td><span id="temperature">99</span> &deg;C</td>
+      </tr>
+      <tr>
+        <td>Feuchtigkeit</td><td><span id="humidity">0</span> %</td>
+      </tr>
+      <tr>
+        <td>IP</td><td><span id="ip_address">xxx.xxx.xxx.xxx</span></td>
+      </tr>
+      <tr>
+        <td>WLAN:</td><td><span id="ssid"></span></td>
       </tr>
     </table>
+    <a href="debug.html">Debug</a>
 
     <script>
       function get_HW_Infos() {
@@ -58,6 +74,10 @@ def web_page():
             document.getElementById("button_white").innerText = data.button_white;
             document.getElementById("LED_brightness").innerText = data.LED_brightness;
             document.getElementById("current_rgb").innerText = `R: ${data.red}, G: ${data.green}, B: ${data.blue}`;
+            document.getElementById("temperature").innerText = `${data.temperature}`;
+            document.getElementById("humidity").innerText = `${data.humidity}`;
+            document.getElementById("ip_address").innerText = `${data.network_ip}`;
+            document.getElementById("ssid").innerText = `${data.network_ssid}`;
           }
         };
         xhr.send();
@@ -72,12 +92,37 @@ def web_page():
         xhr.send();
       }
 
-      setInterval(get_HW_Infos, 5000);
+      setInterval(get_HW_Infos, 4000);
     </script>
   </body>
 </html>
 """
     return html
+
+def debug_web_page():
+    debug = """
+<html>
+	<head>
+		<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+		<script type="text/javascript">
+			$(document).ready(function(){
+				setInterval(function(){
+					y=$(document).height()-window.pageYOffset-window.innerHeight;
+					$.get("debugsub.html",function(d){
+						$("pre").append(d);
+						if(y<30)$("html,body").animate({scrollTop:$(document).height()},"slow")
+					})},4000)
+			})
+		</script>
+		<style type="text/css">
+			body{background:#010}
+			pre{font-family:Arial,Helvetica,sans-serif;color:#0d0}
+		</style>
+	</head>
+	<body><pre></pre></body>
+</html>
+"""
+    return debug
 
 def web_css():
     css = """

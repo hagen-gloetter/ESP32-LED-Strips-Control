@@ -12,6 +12,7 @@ from machine import Pin
 from rotary import Rotary
 from sys import platform
 from time import sleep_ms
+from class_debug import debug
 
 class RotaryIRQ(Rotary):
 
@@ -68,21 +69,21 @@ class RotaryIRQ(Rotary):
 #        if sw.value() == 1:
 #            isRotaryEncoder = not isRotaryEncoder
 #            if isRotaryEncoder == True:
-#                print('Rotary Encoder is now enabled.')
+#                debug(4, __name__, 'Rotary Encoder is now enabled.')
 #            else:
-#                print('Rotary Encoder is now disabled.')
+#                debug(4, __name__, 'Rotary Encoder is now disabled.')
 #        if sw.value() == 0:
 #            isRotaryEncoder = not isRotaryEncoder
 #            if isRotaryEncoder == True:
-#                print('Rotary Encoder is now enabled.')
+#                debug(4, __name__, 'Rotary Encoder is now enabled.')
 #            else:
-#                print('Rotary Encoder is now disabled.')
+#                debug(4, __name__, 'Rotary Encoder is now disabled.')
         if isRotaryEncoder == True:
 #            global val_old
             val_new = self.value()
             if val_old != val_new:
                 val_old = val_new
-                #print('result = {}'.format(val_new))
+                #debug(4, __name__, 'result = {}'.format(val_new))
                 return val_new
         
 #r = RotaryIRQ(

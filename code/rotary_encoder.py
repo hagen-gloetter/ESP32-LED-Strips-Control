@@ -4,6 +4,8 @@
 from machine import Pin
 from time import sleep_ms
 from rotary_irq_esp import RotaryIRQ
+from class_debug import debug
+
 
 r = RotaryIRQ(
     pin_num_clk=33,
@@ -15,7 +17,7 @@ r = RotaryIRQ(
 sw = Pin(14, Pin.IN)
 val_old = r.value()
 isRotaryEncoder = True
-#print ("rotary_encoder loaded")
+#debug(4, __name__, "rotary_encoder loaded")
 
 # Debouncing function for switch
 def debounce(pin):
@@ -29,14 +31,14 @@ def get_rotary_encoder():
 #    if debounce(sw) == 1:
 #        isRotaryEncoder = not isRotaryEncoder
 #        if isRotaryEncoder == True:
-#            print('Rotary Encoder is now enabled.')
+#            debug(4, __name__, 'Rotary Encoder is now enabled.')
 #        else:
-#            print('Rotary Encoder is now disabled.')
+#            debug(4, __name__, 'Rotary Encoder is now disabled.')
 #
 #    if isRotaryEncoder == True:
     global val_old
     val_new = r.value()
     if val_old != val_new:
         val_old = val_new
-        print('result = {}'.format(val_new))
+        debug(4, __name__, 'result = {}'.format(val_new))
         return val_new

@@ -1,6 +1,7 @@
 from machine import Pin
 from time import sleep_ms
 from rotary_irq_esp import RotaryIRQ
+from class_debug import debug
 
 # Initialize Rotary Encoder
 r = RotaryIRQ(
@@ -33,9 +34,9 @@ def get_rotary_encoder():
         isRotaryEncoder = not isRotaryEncoder
         if DEBUG:
             if isRotaryEncoder:
-                print('Rotary Encoder is now enabled.')
+                debug(4, __name__, 'Rotary Encoder is now enabled.')
             else:
-                print('Rotary Encoder is now disabled.')
+                debug(4, __name__, 'Rotary Encoder is now disabled.')
 
     if isRotaryEncoder:
         global val_old
@@ -43,6 +44,6 @@ def get_rotary_encoder():
         if val_old != val_new:
             val_old = val_new
             if DEBUG:
-                print('Encoder value changed: {}'.format(val_new))
+                debug(4, __name__, 'Encoder value changed: {}'.format(val_new))
             return val_new
     return None

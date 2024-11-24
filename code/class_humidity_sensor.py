@@ -4,6 +4,7 @@ import dht
 from machine import Pin
 import sys
 import time
+from class_debug import debug
 
 
 class HumiditySensor:
@@ -63,7 +64,7 @@ def main():
     sensor = HumiditySensor()
     while True:
         (temperature, humidity) = sensor.get_humidity_and_temperature()
-        print(f"temperature={temperature}, humidity={humidity}")
+        debug(4, __name__, f"temperature={temperature}, humidity={humidity}")
         time.sleep(2)
 
 
