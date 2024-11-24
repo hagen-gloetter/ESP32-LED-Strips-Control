@@ -10,7 +10,7 @@ from class_debug import debug
 class HumiditySensor:
     """Class to connect your ESP32 to a dht-Sensor"""
 
-    def __init__(self, pin=33):
+    def __init__(self, pin=0):
         self.temperature = 0
         self.humidity = 0
         self.oldtemperature = 0
@@ -64,10 +64,11 @@ def main():
     sensor = HumiditySensor()
     while True:
         (temperature, humidity) = sensor.get_humidity_and_temperature()
-        debug(4, __name__, f"temperature={temperature}, humidity={humidity}")
+        print ( f"temperature={temperature}, humidity={humidity}")
         time.sleep(2)
 
 
 if __name__ == "__main__":
     sys.exit(main())
+
 
