@@ -6,7 +6,7 @@ from machine import Pin
 import gc
 import time
 import webrepl
-import webrepl_setup
+#import webrepl_setup
 print ("boot.py")
 
 webrepl.start()

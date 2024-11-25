@@ -148,10 +148,11 @@ def main():
         list = wifi.check_connection()
         for item in list:
             debug(4, __name__, item)
-        sleep_ms(3000)
+        sleep_ms(10000)
     wifi.disconnect()
 
 
 if __name__ == "__main__":
     sys.exit(main())
+
 
