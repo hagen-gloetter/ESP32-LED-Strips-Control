@@ -367,7 +367,7 @@ def Button_W_switch():
         ColorSollwerte = [0, 0, 0]
     else:
         txt = "Button_W_switch: Else Case ERROR Red=" + Light_R + " white="+Light_W
-    debug(2, __name__ + Button_Counter, txt)
+    debug(2, __name__ + str(Button_Counter), txt)
     set_JSON(Light_W, Light_R)
 
 
@@ -397,7 +397,7 @@ def Button_R_switch():
         ColorSollwerte = [0, 0, 0]
     else:
         txt = "Button_R_switch: Else Case ERROR Red=" + Light_R + " white="+Light_W
-    debug(2, __name__ + Button_Counter, txt)
+    debug(2, __name__ + str(Button_Counter), txt)
     set_JSON(Light_W, Light_R)
 
 
@@ -547,6 +547,7 @@ while i == 0:
     sleep_ms(60000)  # check connection every 60s
     # Garbage collection regelmäßig aufrufen
     gc.collect()
+
 
 
 
