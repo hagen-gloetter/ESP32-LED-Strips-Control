@@ -1,3 +1,9 @@
+"""
+Boot script executed on every ESP32 reset (including deep-sleep wake).
+
+Starts WebREPL so the device can be accessed remotely over WiFi.
+The main WiFi connection is handled by ``main.py``.
+"""
 # This file is executed on every boot (including wake-boot from deepsleep)
 import esp
 #esp.osdebug(None)

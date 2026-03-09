@@ -1,3 +1,22 @@
+"""
+Software button debounce for ESP32 GPIO inputs.
+
+Provides ``debounced_Button`` which needs to be polled at a fixed rate
+(e.g. via a 10 ms hardware timer). A button state change is only accepted
+after the input has been stable for ``debounceTime`` consecutive polls.
+
+Usage::
+
+    from class_debounce import debounced_Button
+    btn = debounced_Button(pin=13)
+    # call btn.get_status() every 10 ms (e.g. from a Timer callback)
+    if btn.get_status() == "ON":
+        ...
+
+Hardware:
+    - GPIO configured as input with internal pull-up
+    - Active-low wiring (button connects pin to GND)
+"""
 import time
 from machine import Pin
 from machine import Timer
@@ -24,6 +43,16 @@ class debounced_Button():
         self.xtremelongpress = 0 
 
     def get_status(self):
+        """
+        Poll the button pin and return the debounced state.
+
+        Must be called at a regular interval (typically 10 ms via a Timer).
+        A transition is registered after ``debounceTime`` consecutive stable
+        readings. Long-press and extreme-long-press counters are also updated.
+
+        Returns:
+            str: ``"ON"`` or ``"OFF"``.
+        """
         # Button has to be pressed 5 cycles
         if self.pin.value() == 0:  # PULL_UP -> 0 = pressed
             self.cnt += 1
@@ -44,12 +73,15 @@ class debounced_Button():
         return self.status
 
     def get_oldstatus(self):
+        """Return the button state as of the last confirmed transition."""
         return self.oldstatus
 
     def get_longpress(self):
+        """Return the long-press counter (increments once per ~5 s hold)."""
         return self.longpress
 
     def get_xtremelongpress(self):
+        """Return the extreme-long-press counter (increments once per ~10 s hold)."""
         return self.xtremelongpress
 
     def togglebutton(self):

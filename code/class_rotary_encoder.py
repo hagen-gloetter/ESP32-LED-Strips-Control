@@ -1,3 +1,26 @@
+"""
+ESP32 hardware-interrupt rotary encoder driver.
+
+Extends the platform-independent ``Rotary`` base class with GPIO IRQ
+handling. Also provides a convenience method ``get_rotary_encoder()``
+that filters repeated values for use in polling loops.
+
+Usage::
+
+    from class_rotary_encoder import RotaryIRQ
+    r = RotaryIRQ(pin_num_clk=33, pin_num_dt=34, min_val=0, max_val=10,
+                  reverse=True, range_mode=RotaryIRQ.RANGE_BOUNDED)
+    old = r.value()
+    while True:
+        new = r.get_rotary_encoder(sw_pin, old)
+        if new is not None:
+            old = new
+
+Hardware:
+    - CLK pin: GPIO 33 (in main.py)
+    - DT  pin: GPIO 34 (in main.py)
+    - SW  pin: GPIO 14 (not used inside this class)
+"""
 # The MIT License (MIT)
 # Copyright (c) 2020 Mike Teachman
 # https://opensource.org/licenses/MIT
@@ -63,22 +86,21 @@ class RotaryIRQ(Rotary):
     def _hal_close(self):
         self._hal_disable_irq()
         
-    def get_rotary_encoder(self, sw, val_old):
-        global isRotaryEncoder
-#        global sw
-#        if sw.value() == 1:
-#            isRotaryEncoder = not isRotaryEncoder
-#            if isRotaryEncoder == True:
-#                debug(4, __name__, 'Rotary Encoder is now enabled.')
-#            else:
-#                debug(4, __name__, 'Rotary Encoder is now disabled.')
-#        if sw.value() == 0:
-#            isRotaryEncoder = not isRotaryEncoder
-#            if isRotaryEncoder == True:
-#                debug(4, __name__, 'Rotary Encoder is now enabled.')
-#            else:
-#                debug(4, __name__, 'Rotary Encoder is now disabled.')
-        if isRotaryEncoder == True:
+    def get_rotary_encoder(self, sw, val_old, is_enabled=True):
+        """
+        Return the current encoder value if it changed since *val_old*.
+
+        Args:
+            sw (Pin): The rotary encoder push-button pin (reserved for
+                future enable/disable toggle; currently unused).
+            val_old (int): The previously seen encoder value.
+            is_enabled (bool): When False the encoder is ignored and
+                ``None`` is always returned.
+
+        Returns:
+            int | None: New value if the encoder moved, else ``None``.
+        """
+        if is_enabled:
 #            global val_old
             val_new = self.value()
             if val_old != val_new:

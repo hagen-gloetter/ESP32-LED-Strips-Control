@@ -1,3 +1,36 @@
+"""
+Main application for ESP32 LED-Strip Observatory Lighting control.
+
+Controls three RGB LED strips for the Sternwarte Höfingen observatory via PWM.
+Provides a web interface (port 80), hardware buttons, and a rotary encoder
+for brightness and colour control. A DHT11 sensor reports ambient temperature
+and humidity on the web UI.
+
+Hardware:
+    - ESP32 (AZ-Delivery D1 Mini or compatible)
+    - 3× RGB LED strip (common-cathode, PWM-driven)
+    - 2× push button (white/red light toggle)
+    - 1× rotary encoder with push button (brightness)
+    - 1× DHT11 temperature/humidity sensor
+    - Built-in LED on GPIO 2
+
+Pin mapping (see constants below):
+    PIN_DHT       = 0   DHT11 data
+    PIN_STRIP_1R  = 27  Strip 1 Red
+    PIN_STRIP_1G  = 25  Strip 1 Green
+    PIN_STRIP_1B  = 32  Strip 1 Blue
+    PIN_STRIP_2R  = 22  Strip 2 Red
+    PIN_STRIP_2G  = 21  Strip 2 Green
+    PIN_STRIP_2B  = 17  Strip 2 Blue
+    PIN_STRIP_3R  = 19  Strip 3 Red
+    PIN_STRIP_3G  = 18  Strip 3 Green
+    PIN_STRIP_3B  = 26  Strip 3 Blue
+    PIN_BUTTON_W  = 13  White-light button
+    PIN_BUTTON_R  = 10  Red-light button
+    PIN_BUTTON_D  = 14  Rotary encoder push button
+    PIN_CLK       = 33  Rotary encoder CLK
+    PIN_DT        = 34  Rotary encoder DT
+"""
 # Lighting for our Observatory with LED-Stripes
 # Observatory: https://www.sternwarte-hoefingen.de
 # Code by Hagen and Ramona Glötter
@@ -37,7 +70,6 @@ from class_debounce import debounced_Button
 from class_humidity_sensor import HumiditySensor
 from web_html import web_page, debug_web_page, web_css
 import class_wifi_connection
-import gc  # Import garbage collection module
 
 try:
     import usocket as socket
@@ -115,9 +147,16 @@ debug(4, __name__, "Wifi connection established")
 
 
 def get_websocket():
+    """
+    Create and bind the TCP server socket on port 80.
+
+    Sets SO_REUSEADDR so the port is immediately available after a reboot.
+    Stores the socket in the global ``websocket`` variable.
+    """
     global websocket
     debug(4, __name__, "Websocket init")
     websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    websocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     websocket.bind(("", 80))
     websocket.listen(5)
     sleep_ms(500)
@@ -125,6 +164,16 @@ def get_websocket():
 
 
 def thread_webserver(delay, name):
+    """
+    Webserver thread: accept HTTP requests and serve the control UI.
+
+    Runs until ``run_webserver`` is set to False. Parses GET parameters
+    for RGB colour, red/white toggle, and JSON/CSS/debug endpoints.
+
+    Args:
+        delay (int): Unused legacy parameter.
+        name (str): Thread name used in debug messages.
+    """
     global run_webserver
     while run_webserver == True:
         global web_page
@@ -141,6 +190,7 @@ def thread_webserver(delay, name):
         #    while True:
         #    sleep_ms(100)
         #   Init Websocket
+        conn = None
         try:
             # print webpage =========================================================================================================
             #        debug(4, __name__, 'Before accept')
@@ -218,42 +268,44 @@ def thread_webserver(delay, name):
             #debug(4, __name__, "## " + debugrequest + " " + debugsubrequest) # DEBUG
             if jsonrequest > 0:  # JSON
                 response = JSONdata
-                conn.send("HTTP/1.1 200 OK\n")
-                conn.send("Content-Type: application/json\n")
-                conn.send("Connection: close\n\n")
-                conn.sendall(response)
+                conn.send(b"HTTP/1.1 200 OK\n")
+                conn.send(b"Content-Type: application/json\n")
+                conn.send(b"Connection: close\n\n")
+                conn.sendall(response.encode())
                 conn.close()
             elif cssrequest > 0:  # CSS
                 response = web_css()
-                conn.send("HTTP/1.1 200 OK\n")
-                conn.send("Content-Type: text/css\n")
-                conn.send("Connection: close\n\n")
-                conn.sendall(response)
+                conn.send(b"HTTP/1.1 200 OK\n")
+                conn.send(b"Content-Type: text/css\n")
+                conn.send(b"Connection: close\n\n")
+                conn.sendall(response.encode())
                 conn.close()
             elif debugsubrequest > 0:  # Main debug page
                 response = get_debug_msg()
-                conn.send("HTTP/1.1 200 OK\n")
-                conn.send("Content-Type: text/plain\n")
-                conn.send("Connection: close\n\n")
-                conn.sendall(response)
+                conn.send(b"HTTP/1.1 200 OK\n")
+                conn.send(b"Content-Type: text/plain\n")
+                conn.send(b"Connection: close\n\n")
+                conn.sendall(response.encode())
                 conn.close()
             elif debugrequest > 0:  # Main debug page
                 response = debug_web_page()
-                conn.send("HTTP/1.1 200 OK\n")
-                conn.send("Content-Type: text/html\n")
-                conn.send("Connection: close\n\n")
-                conn.sendall(response)
+                conn.send(b"HTTP/1.1 200 OK\n")
+                conn.send(b"Content-Type: text/html\n")
+                conn.send(b"Connection: close\n\n")
+                conn.sendall(response.encode())
                 conn.close()
             else:  # HTML
                 response = web_page()
-                conn.send("HTTP/1.1 200 OK\n")
-                conn.send("Content-Type: text/html\n")
-                conn.send("Connection: close\n\n")
-                conn.sendall(response)
+                conn.send(b"HTTP/1.1 200 OK\n")
+                conn.send(b"Content-Type: text/html\n")
+                conn.send(b"Connection: close\n\n")
+                conn.sendall(response.encode())
                 conn.close()
                 print("default") # DEBUG
-        except:
-            conn.close()
+        except Exception as e:
+            debug(4, __name__, f"webserver error: {e}")
+            if conn is not None:
+                conn.close()
         # Garbage collection nach jeder Anfrage
         gc.collect()  # Speicher freigeben
 
@@ -274,6 +326,13 @@ JSONdata = """
 
 
 def set_JSON(status1, status2):
+    """
+    Build the global ``JSONdata`` string from current system state.
+
+    Args:
+        status1 (str): Current Light_W state ("ON"/"OFF").
+        status2 (str): Current Light_R state ("ON"/"OFF").
+    """
     global JSONdata
     global Light_R
     global Light_W
@@ -304,6 +363,7 @@ def set_JSON(status1, status2):
 # Webserver end =========================================================================================================
 
 def do_a_blink(status):
+    """Set the built-in LED to *status* (0=off, 1=on)."""
     led.value(status)
 #    sleep_ms(200)
 #    led.value(0)
@@ -311,6 +371,14 @@ def do_a_blink(status):
 
 
 def strips_update_Brightness():
+    """
+    Apply brightness-scaled fade from ``ColorRGB`` toward ``ColorSollwerte``.
+
+    Called by the LED-fade timer (timer0, 53 ms period). Advances each
+    channel by ``Fade_speed`` per call and writes the result to all strips.
+    When white or red mode is active, ``ColorSollwerte`` is first updated
+    to reflect the current ``Brightness`` value.
+    """
     global ColorSollwerte
     global ColorRGB
     global Brightness
@@ -345,6 +413,12 @@ def strips_update_Brightness():
 
 
 def Button_W_switch():
+    """
+    Toggle the white-light state.
+
+    Red light takes priority: if red is ON the white button is ignored.
+    Sets ``ColorSollwerte`` accordingly and updates the JSON state.
+    """
     global Light_W
     global Light_R
     global ColorSollwerte
@@ -372,12 +446,19 @@ def Button_W_switch():
 
 
 def Button_R_switch():
+    """
+    Toggle the red-light state.
+
+    Red light overrides white: pressing the red button while white is ON
+    switches to red mode. Sets ``ColorSollwerte`` accordingly and updates
+    the JSON state.
+    """
     global Light_W
     global Light_R
     global ColorSollwerte
     global Brightness
     global Button_Counter
-    txt = Button_R_switch
+    txt = "Button_R_switch"
     if Light_R == "OFF" and Light_W == "OFF":
         Light_R = "ON"
         Light_W = "OFF"  # just 2b sure
@@ -410,17 +491,25 @@ Button_D = debounced_Button(PIN_BUTTON_D)  # Taster für den Rotary-Encoder (Dre
 
 
 def RotaryController():
+    """
+    Read the rotary encoder and update ``Brightness``.
+
+    Only active when at least one light is ON. Brightness is set to
+    2^encoder_value, mapping 0–10 steps to 1–1024. Called every 59 ms
+    via timer1.
+    """
     global Light_W
     global Light_R
     global rotary_val_old
     global rotarySwitch
     global Brightness
     if Light_W == "ON" or Light_R == "ON":  # only if at least one switch is on
-        r_value = r.get_rotary_encoder(rotarySwitch, rotary_val_old)
-        if r_value != None:  # somehow zero means None ?
+        r_value = r.get_rotary_encoder(rotarySwitch, rotary_val_old, isRotaryEncoder)
+        if r_value is not None:
+            rotary_val_old = r_value
             Brightness = (
                 2**r_value
-            )  # tranlate 16 steps to 255 color-steps and set limits
+            )  # translate 16 steps to 255 color-steps and set limits
         else:
             pass
         # debug(4, __name__, f"Brightness update ={Brightness} = {r_value}")
@@ -537,16 +626,25 @@ Strip1.SetColor(0, 0, 0)
 
 # while True:
 
-i = 0
-while i == 0:
-    (wifi_status, wifi_ssid, wifi_ip) = wifi.check_connection()
-# if DebugLevel > 2:
-    debug(2, __name__, wifi_status)
-    debug(2, __name__, wifi_ssid)
-    debug(2, __name__, wifi_ip)
-    sleep_ms(60000)  # check connection every 60s
-    # Garbage collection regelmäßig aufrufen
-    gc.collect()
+# Loop and WDT constants
+LOOP_MS          = 100   # Main loop interval ms → 10 Hz
+WIFI_CHECK_TICKS = 600   # WiFi check every 600 * 100ms = 60 s
+
+# Activate Hardware Watchdog AFTER all init is complete.
+# Timeout > WiFi connect timeout (10s) to allow reconnect attempts.
+wdt = machine.WDT(timeout=15000)  # 15 s
+
+_loop_count = 0
+while True:
+    wdt.feed()
+    _loop_count += 1
+    if _loop_count % WIFI_CHECK_TICKS == 0:
+        (wifi_status, wifi_ssid, wifi_ip) = wifi.check_connection()
+        debug(2, __name__, wifi_status)
+        debug(2, __name__, wifi_ssid)
+        debug(2, __name__, wifi_ip)
+        gc.collect()
+    sleep_ms(LOOP_MS)
 
 
 

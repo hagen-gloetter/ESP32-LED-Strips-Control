@@ -9,20 +9,24 @@ import utime  # Verwende utime f�r Zeitmessung in MicroPython
 from class_debug import debug
 
 class WifiConnect:
-    """Class to connect your ESP32 to local Wifi
-    SSID and WiFi PW are read from file: secrets_wifi.json
-    Usage:
-    # Setup Wifi
-    import class_wifi_connection
-    global wifi
-    wifi = class_wifi_connection.WifiConnect()
-    (wifi_status, wifi_ssid, wifi_ip) = wifi.connect()
-    # in a loop or timer
-    list = wifi.check_connection()
-    for item in list:
-        debug(4, __name__, item)
-    # stop
-        wifi.disconnect()
+    """
+    Multi-SSID WiFi connection manager for ESP32.
+
+    Reads credentials from ``secrets_wifi.json`` (a JSON object mapping
+    SSID → password). Scans for known networks and connects to the first
+    match. Provides reconnect logic for use in the main loop.
+
+    Usage::
+
+        import class_wifi_connection
+        wifi = class_wifi_connection.WifiConnect()
+        wifi_status, wifi_ssid, wifi_ip = wifi.connect()
+        # Later in main loop:
+        wifi.check_connection()
+
+    Notes:
+        ``secrets_wifi.json`` must exist on the device filesystem before
+        ``connect()`` is called.
     """
 
     def __init__(self):
@@ -33,12 +37,23 @@ class WifiConnect:
         self.wifi = None
 
     def connect(self):
+        """
+        Load credentials from ``secrets_wifi.json`` and connect.
+
+        Scans for available networks and tries each SSID listed in the
+        credentials file until a connection is established.
+
+        Returns:
+            list: ``[status (str), ssid (str), ip (str)]``.
+                  *status* is ``"online"`` on success, ``"offline"`` on failure.
+        """
         debug(4, __name__, "connect wifi called")
         fn_secrets = "secrets_wifi.json"
         try:
-            wlan_json = ujson.load(open(fn_secrets))
-        except:
-            debug(4, __name__, f"!!!!!!!!!!!!!!!! ERROR !!!!!!!!!!!!!!!! File not found {fn_secrets}")
+            with open(fn_secrets) as f:
+                wlan_json = ujson.load(f)
+        except Exception as e:
+            debug(4, __name__, f"!!!!!!!!!!!!!!!! ERROR !!!!!!!!!!!!!!!! File not found {fn_secrets}: {e}")
             return ("offline", "offline", "offline")
         else:
             debug(4, __name__, f"connect wifi called with {fn_secrets}")
@@ -70,6 +85,16 @@ class WifiConnect:
             
 
     def try_wifi_connect(self, ssid=None, pwd=None):
+        """
+        Attempt a connection to a specific SSID with a 10-second timeout.
+
+        Args:
+            ssid (str): Network SSID. Defaults to stored ``wifi_ssid``.
+            pwd (str): Network password. Defaults to stored ``wifi_pw``.
+
+        Returns:
+            list: ``[status, ssid, ip]`` — same format as :meth:`connect`.
+        """
         if ssid is None:
             ssid = self.wifi_ssid
             pwd = self.wifi_pw
@@ -109,6 +134,12 @@ class WifiConnect:
         return self.wifi.isconnected()
 
     def check_connection(self):
+        """
+        Verify WiFi is still connected; reconnect automatically if not.
+
+        Returns:
+            list: ``[status, ssid, ip]``.
+        """
         debug(4, __name__, "check_connection called")
         if self.wifi_ssid == "offline":
             debug(4, __name__, "Attempting to connect to SSID: " + self.wifi_ssid)
@@ -124,7 +155,7 @@ class WifiConnect:
 
     def is_connected(self):
         debug(4, __name__, "is_connected called")
-        (wifi_status, wifi_ssid, wifi_ip) = self.wifi.check_connection()
+        (wifi_status, wifi_ssid, wifi_ip) = self.check_connection()
         list = [self.wifi_status, self.wifi_ssid, self.wifi_ip]
         return list
 

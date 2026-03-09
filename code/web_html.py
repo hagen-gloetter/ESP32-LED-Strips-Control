@@ -1,6 +1,26 @@
+"""
+HTML, CSS and debug-page templates for the ESP32 web interface.
+
+All three functions return plain strings that are encoded to bytes
+before being written to the socket in ``main.py``.
+
+Functions:
+    web_page()        — main control UI
+    debug_web_page()  — live debug log viewer (auto-scrolling)
+    web_css()         — shared stylesheet
+"""
 # web_html.py
 
 def web_page():
+    """
+    Return the main control UI as an HTML string.
+
+    The page polls ``data.json`` every 4 seconds via XHR to update
+    button states, RGB values, temperature, humidity and network info.
+
+    Returns:
+        str: Full HTML document.
+    """
     html = """
 <!DOCTYPE html>
 <html lang="en">
@@ -100,6 +120,15 @@ def web_page():
     return html
 
 def debug_web_page():
+    """
+    Return the debug log viewer as an HTML string.
+
+    Uses jQuery to poll ``debugsub.html`` every 4 seconds and append
+    new log lines to a ``<pre>`` element with auto-scroll.
+
+    Returns:
+        str: Full HTML document.
+    """
     debug = """
 <html>
 	<head>
@@ -125,6 +154,12 @@ def debug_web_page():
     return debug
 
 def web_css():
+    """
+    Return the shared stylesheet as a CSS string.
+
+    Returns:
+        str: CSS rules for the web interface.
+    """
     css = """
 html {
     font-family: Helvetica;

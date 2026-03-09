@@ -1,3 +1,19 @@
+"""
+RGB LED-Strip PWM driver for ESP32.
+
+Provides the ``LEDStrip`` class which controls a single common-cathode
+RGB LED strip via three PWM channels.
+
+Usage::
+
+    from class_pwm import LEDStrip
+    strip = LEDStrip(0, 0, 0, pin_r=27, pin_g=25, pin_b=32)
+    strip.SetColor(512, 0, 0)   # half-brightness red
+
+Hardware:
+    - Three GPIO pins configured as PWM output (duty 0–1023)
+    - Recommended PWM frequency: 7321 Hz (prime, avoids camera/eye artefacts)
+"""
 import machine
 from machine import Pin, PWM, Timer
 import time
@@ -23,6 +39,17 @@ global PIN_DT
 print ("LEDStrip Class loaded")
 
 class LEDStrip:
+    """
+    Single RGB LED strip controlled via three PWM channels.
+
+    Args:
+        R (int): Initial red duty cycle (0–1023).
+        G (int): Initial green duty cycle (0–1023).
+        B (int): Initial blue duty cycle (0–1023).
+        GPIO1 (int): Pin number for the red channel.
+        GPIO2 (int): Pin number for the green channel.
+        GPIO3 (int): Pin number for the blue channel.
+    """
     def __init__(self, R=0, G=0, B=0, GPIO1=27, GPIO2=25, GPIO3=32):
         frequency = 7321  # Prime for no visible artefacts in eyes and cellphones
         self.R = R
@@ -34,6 +61,17 @@ class LEDStrip:
         self.pwmB = PWM(Pin(GPIO3, Pin.OUT), freq=frequency, duty=0)        
 
     def SetColor(self, R, G, B):
+        """
+        Set the RGB colour of the strip.
+
+        Values are clamped to [0, 1023] before being written to the
+        PWM duty registers.
+
+        Args:
+            R (int): Red duty cycle (0–1023).
+            G (int): Green duty cycle (0–1023).
+            B (int): Blue duty cycle (0–1023).
+        """
         # duty is from 0 to 1023
         # Clamp values to be between 0 and 1023
         R = min(max(R, 0), 1023)
