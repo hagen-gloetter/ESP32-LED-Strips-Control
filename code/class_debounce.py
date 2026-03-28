@@ -37,7 +37,7 @@ class debounced_Button():
         self.pin = Pin(pin, mode=Pin.IN, pull=Pin.PULL_UP)
         self.status = "OFF"
         self.cnt = 0
-        self.debounceTime = 5  # x cycles have to be done
+        self.debounceTime = 10  # x cycles have to be done (increased for robustness)
         self.oldstatus = self.status
         self.longpress = 0 
         self.xtremelongpress = 0 

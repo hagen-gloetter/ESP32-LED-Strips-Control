@@ -9,7 +9,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Session 1] — 2026-03-09
+## [Session 4] — 2026-03-28
+
+### Added
+
+- **IMP-03** — Separate Logs-Webseite: Neue Route `/logs.html` und `/logs.json` für Live-Debug-Logging. Pollt alle 5s für kontinuierliche Anzeige.
+- **Konfigurationsdatei** — `config.json`: Konstanten (Brightness, Fade_speed, etc.) ausgelagert für einfache Anpassung ohne Code-Änderung.
+- **Mehr Presets im Webinterface** — Zusätzliche Farb-Presets: Gelb, Lila, Cyan, Orange. Erweitert Benutzerfreundlichkeit.
+- **Erweiterte Logging** — Mehr Debug-Nachrichten für Edge-Cases: DHT11-Fehler, Rotary-Encoder-Status, WiFi-Scan-Ergebnisse.
+
+### Changed
+
+- **WiFi-Check-Intervall** — Von 60s auf 30s reduziert für schnellere Reconnect-Erkennung.
+- **RGB-Skalierung** — Web-Eingaben (0-255) werden auf interne PWM-Auflösung (0-1023) skaliert für volle Helligkeit.
+- **Strip3-Integration** — Alle drei LED-Strips werden nun bei RGB-Web-Updates und Fading aktualisiert.
+- **Code-Deduplikation** — Neue Funktion `update_all_strips()` für Strip-Updates. Reduziert Wiederholungen.
+- **Button-Debounce** — `debounceTime` von 5 auf 10 Zyklen erhöht für robustere Fehleingabe-Verhinderung.
+- **Webinterface-Layout** — Getrennte Eingabefelder für R, G, B mit Presets. Verbessert Usability.
+
+---
 
 ### Fixed
 

@@ -140,14 +140,19 @@ PWM-Frequenz: **7321 Hz** (Primzahl, verhindert Moire-Artefakte in Kameras und A
 
 ### Konfiguration
 
-#### Konstanten in `main.py`
+#### Konstanten in `config.json`
+
+Konstanten können in `config.json` angepasst werden (Fallback auf Defaults bei Fehler):
 
 | Konstante | Standardwert | Beschreibung |
 |---|---|---|
 | `LOOP_MS` | `100` | Haupt-Loop-Takt in ms (10 Hz) |
-| `WIFI_CHECK_TICKS` | `600` | WiFi-Check alle 600 × 100 ms = 60 s |
+| `WIFI_CHECK_TICKS` | `300` | WiFi-Check alle 300 × 100 ms = 30 s |
 | `Brightness` | `1024` | Anfangshelligkeit (0–1023) |
 | `Fade_speed` | `16` | Fade-Schrittgröße pro Timer-Tick |
+| `DebugLevel` | `4` | Debug-Level (0=none, 4=verbose) |
+
+---
 | `DebugLevel` | `4` | 0=keine, 1=Fehler, 2=Warn, 3=Info, 4=verbose |
 
 WDT-Timeout: **15 000 ms** (> WiFi-Connect-Timeout von 10 000 ms).
@@ -193,6 +198,8 @@ Tool: [http://micropython.org/webrepl/](http://micropython.org/webrepl/)
 | `/data.json` | Aktueller Status als JSON |
 | `/web.css` | Stylesheet |
 | `/debug.html` | Live-Debug-Log |
+| `/logs.html` | Separate Logs-Webseite |
+| `/logs.json` | Logs als JSON für Polling |
 
 ---
 
@@ -202,6 +209,7 @@ Tool: [http://micropython.org/webrepl/](http://micropython.org/webrepl/)
 code/
 ├── boot.py                  # Startup: startet WebREPL
 ├── main.py                  # Hauptanwendung (GPIO, Webserver, Loop)
+├── config.json              # Konfigurationsdatei für Konstanten
 ├── class_pwm.py             # RGB-LED-Strip PWM-Treiber
 ├── class_debounce.py        # Software-Entprellung für Tasten
 ├── class_debug.py           # Ring-Buffer Debug-Logger

@@ -68,7 +68,7 @@ from class_rotary_encoder import RotaryIRQ
 from class_pwm import LEDStrip
 from class_debounce import debounced_Button
 from class_humidity_sensor import HumiditySensor
-from web_html import web_page, debug_web_page, web_css
+from web_html import web_page, debug_web_page, logs_web_page, web_css
 import class_wifi_connection
 
 try:
@@ -77,7 +77,26 @@ except:
     import socket
 
 debug_init()
-DebugLevel = 4  # 0=none 1=error 2=warn 3=nicetosee 4=whatever
+
+# Load configuration
+try:
+    with open("config.json", "r") as f:
+        import ujson
+        config = ujson.load(f)
+    Brightness = config.get("Brightness", 1024)
+    Fade_speed = config.get("Fade_speed", 16)
+    DebugLevel = config.get("DebugLevel", 4)
+    LOOP_MS = config.get("LOOP_MS", 100)
+    WIFI_CHECK_TICKS = config.get("WIFI_CHECK_TICKS", 300)
+    debug(3, __name__, "Configuration loaded from config.json")
+except Exception as e:
+    debug(2, __name__, f"Failed to load config.json: {e}, using defaults")
+    Brightness = 1024
+    Fade_speed = 16
+    DebugLevel = 4
+    LOOP_MS = 100
+    WIFI_CHECK_TICKS = 300
+
 debug(4, __name__, "main.py start")
 
 # setup LED
@@ -105,10 +124,8 @@ humidity = 0
 
 
 # setup LED Stripes
-Brightness = 1024
 ColorRGB = [0, 0, 0]
 ColorSollwerte = [0, 0, 0]
-Fade_speed = 16
 
 # init LED Stripes
 # TODO  Listen übergeben
@@ -118,6 +135,19 @@ Strip3 = LEDStrip(ColorRGB[0], ColorRGB[1], ColorRGB[2], PIN_STRIP_3R, PIN_STRIP
 Strip1.SetColor(ColorRGB[0], ColorRGB[1], ColorRGB[2])
 Strip2.SetColor(ColorRGB[0], ColorRGB[1], ColorRGB[2])
 Strip3.SetColor(ColorRGB[0], ColorRGB[1], ColorRGB[2])
+
+def update_all_strips(r, g, b):
+    """
+    Update all three LED strips with the given RGB values.
+
+    Args:
+        r (int): Red duty cycle (0–1023).
+        g (int): Green duty cycle (0–1023).
+        b (int): Blue duty cycle (0–1023).
+    """
+    Strip1.SetColor(r, g, b)
+    Strip2.SetColor(r, g, b)
+    Strip3.SetColor(r, g, b)
 
 r = RotaryIRQ(
     pin_num_clk=PIN_CLK,
@@ -216,11 +246,12 @@ def thread_webserver(delay, name):
                     # Validate if the values are in the range of 0 to 255
                     if 0 <= r_value <= 255 and 0 <= g_value <= 255 and 0 <= b_value <= 255:
                         debug(4, __name__, f"Received valid RGB values: R={r_value}, G={g_value}, B={b_value}")
-                        ColorSollwerte = [r_value, g_value, b_value]  # Set the color for the LED Strip
+                        # Scale from 0-255 to 0-1023 for internal PWM resolution
+                        ColorSollwerte = [r_value * 1023 // 255, g_value * 1023 // 255, b_value * 1023 // 255]
+                        # Set the color for the LED Strips
 
-                        # Update the LED strip with the new color
-                        Strip1.SetColor(ColorSollwerte[0], ColorSollwerte[1], ColorSollwerte[2])
-                        Strip2.SetColor(ColorSollwerte[0], ColorSollwerte[1], ColorSollwerte[2])
+                        # Update the LED strips with the new color
+                        update_all_strips(ColorSollwerte[0], ColorSollwerte[1], ColorSollwerte[2])
                     else:
                         debug(4, __name__, "Invalid RGB values received. Ignoring request.")
                 except ValueError:
@@ -265,11 +296,27 @@ def thread_webserver(delay, name):
             cssrequest = request.find("web.css")
             debugrequest = request.find("debug.html")
             debugsubrequest = request.find("debugsub.html")
+            logsrequest = request.find("logs.html")
+            logsjsonrequest = request.find("logs.json")
             #debug(4, __name__, "## " + debugrequest + " " + debugsubrequest) # DEBUG
             if jsonrequest > 0:  # JSON
                 response = JSONdata
                 conn.send(b"HTTP/1.1 200 OK\n")
                 conn.send(b"Content-Type: application/json\n")
+                conn.send(b"Connection: close\n\n")
+                conn.sendall(response.encode())
+                conn.close()
+            elif logsjsonrequest > 0:  # Logs JSON
+                response = get_debug_msg()
+                conn.send(b"HTTP/1.1 200 OK\n")
+                conn.send(b"Content-Type: application/json\n")
+                conn.send(b"Connection: close\n\n")
+                conn.sendall(response.encode())
+                conn.close()
+            elif logsrequest > 0:  # Logs page
+                response = logs_web_page()
+                conn.send(b"HTTP/1.1 200 OK\n")
+                conn.send(b"Content-Type: text/html\n")
                 conn.send(b"Connection: close\n\n")
                 conn.sendall(response.encode())
                 conn.close()
@@ -403,9 +450,7 @@ def strips_update_Brightness():
                 ColorRGB[i] = ColorSollwerte[i]
         else:
             pass  # values are equal
-    Strip1.SetColor(ColorRGB[0], ColorRGB[1], ColorRGB[2])
-    # TODO: LIST as Parameter
-    Strip2.SetColor(ColorRGB[0], ColorRGB[1], ColorRGB[2])
+    update_all_strips(ColorRGB[0], ColorRGB[1], ColorRGB[2])
     set_JSON(Light_W, Light_R)
 
 
@@ -511,7 +556,7 @@ def RotaryController():
                 2**r_value
             )  # translate 16 steps to 255 color-steps and set limits
         else:
-            pass
+            debug(4, __name__, "Rotary encoder returned None (no change)")
         # debug(4, __name__, f"Brightness update ={Brightness} = {r_value}")
 
 
@@ -626,9 +671,7 @@ Strip1.SetColor(0, 0, 0)
 
 # while True:
 
-# Loop and WDT constants
-LOOP_MS          = 100   # Main loop interval ms → 10 Hz
-WIFI_CHECK_TICKS = 600   # WiFi check every 600 * 100ms = 60 s
+# Main loop
 
 # Activate Hardware Watchdog AFTER all init is complete.
 # Timeout > WiFi connect timeout (10s) to allow reconnect attempts.
@@ -639,10 +682,9 @@ while True:
     wdt.feed()
     _loop_count += 1
     if _loop_count % WIFI_CHECK_TICKS == 0:
+        debug(3, __name__, "Performing WiFi health check")
         (wifi_status, wifi_ssid, wifi_ip) = wifi.check_connection()
-        debug(2, __name__, wifi_status)
-        debug(2, __name__, wifi_ssid)
-        debug(2, __name__, wifi_ip)
+        debug(2, __name__, f"WiFi status: {wifi_status}, SSID: {wifi_ssid}, IP: {wifi_ip}")
         gc.collect()
     sleep_ms(LOOP_MS)
 

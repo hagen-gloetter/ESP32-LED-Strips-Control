@@ -57,7 +57,8 @@ class HumiditySensor:
             self.sensor.measure()
             self.temperature = self.sensor.temperature()
             self.humidity = self.sensor.humidity()
-        except Exception:
+        except Exception as e:
+            debug(2, __name__, f"DHT11 sensor error: {e}, using old values")
             # when fail return old value
             self.temperature = self.oldtemperature
             self.humidity = self.oldhumidity

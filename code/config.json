@@ -1,0 +1,7 @@
+{
+    "Brightness": 1024,
+    "Fade_speed": 16,
+    "DebugLevel": 4,
+    "LOOP_MS": 100,
+    "WIFI_CHECK_TICKS": 300
+}

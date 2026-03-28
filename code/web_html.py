@@ -51,19 +51,41 @@ def web_page():
         <td><p><a href="/?white=on"><button class="button">ON</button></a><a href="/?white=off"><button class="button button2">OFF</button></a></p></td>
       </tr>
       <tr>
-        <td><p>RGB Werte</p></td>
-        <td>
-          <input type="number" id="red" placeholder="R" min="1" max="1024" />
-          <input type="number" id="green" placeholder="G" min="1" max="1024" />
-          <input type="number" id="blue" placeholder="B" min="1" max="1024" />
-        </td>
-        <td>
-          <button class="button" onclick="setColor()">Set Color</button>
-        </td>
+        <td><p>Rot (R)</p></td>
+        <td><input type="number" id="red" placeholder="0-255" min="0" max="255" /></td>
+        <td><button class="button" onclick="setPreset(255,0,0)">Rot Preset</button></td>
+      </tr>
+      <tr>
+        <td><p>Grün (G)</p></td>
+        <td><input type="number" id="green" placeholder="0-255" min="0" max="255" /></td>
+        <td><button class="button" onclick="setPreset(0,255,0)">Grün Preset</button></td>
+      </tr>
+      <tr>
+        <td><p>Blau (B)</p></td>
+        <td><input type="number" id="blue" placeholder="0-255" min="0" max="255" /></td>
+        <td><button class="button" onclick="setPreset(0,0,255)">Blau Preset</button></td>
+      </tr>
+      <tr>
+        <td><p>Set Color</p></td>
+        <td><button class="button" onclick="setColor()">Set RGB</button></td>
+        <td><button class="button" onclick="setPreset(255,255,255)">Weiß Preset</button></td>
+      </tr>
+      <tr>
+        <td><p>Zusätzliche Presets</p></td>
+        <td><button class="button" onclick="setPreset(255,255,0)">Gelb</button></td>
+        <td><button class="button" onclick="setPreset(255,0,255)">Lila</button></td>
+      </tr>
+      <tr>
+        <td></td>
+        <td><button class="button" onclick="setPreset(0,255,255)">Cyan</button></td>
+        <td><button class="button" onclick="setPreset(255,165,0)">Orange</button></td>
       </tr>
       <tr>
         <td colspan="2"><p>Aktuelle RGB Werte</p></td>
         <td colspan="2"><p id="current_rgb">R: 0, G: 0, B: 0</p><br><p id="LED_brightness">100</p></td>
+      </tr>
+      <tr>
+        <td colspan="3"><a href="logs.html">System Logs anzeigen</a></td>
       </tr>
       <tr>
         <td colspan="2" rowspan="4"><p>Umgebung</p></td>
@@ -112,6 +134,13 @@ def web_page():
         xhr.send();
       }
 
+      function setPreset(r, g, b) {
+        document.getElementById("red").value = r;
+        document.getElementById("green").value = g;
+        document.getElementById("blue").value = b;
+        setColor();
+      }
+
       setInterval(get_HW_Infos, 4000);
     </script>
   </body>
@@ -152,6 +181,37 @@ def debug_web_page():
 </html>
 """
     return debug
+
+def logs_web_page():
+    """
+    Return a separate logs viewer as an HTML string.
+
+    Polls /logs.json for the full debug buffer and displays it.
+
+    Returns:
+        str: Full HTML document.
+    """
+    logs = """
+<html>
+	<head>
+		<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+		<script type="text/javascript">
+			$(document).ready(function(){
+				setInterval(function(){
+					$.get("logs.json",function(d){
+						$("pre").text(d);
+					})},5000)
+			})
+		</script>
+		<style type="text/css">
+			body{background:#000}
+			pre{font-family:monospace;color:#0f0;font-size:12px;white-space:pre-wrap}
+		</style>
+	</head>
+	<body><h2>System Logs</h2><pre></pre></body>
+</html>
+"""
+    return logs
 
 def web_css():
     """

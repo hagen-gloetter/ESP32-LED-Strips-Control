@@ -65,6 +65,7 @@ class WifiConnect:
             self.wifi.active(True)
             self.wifi.disconnect()  # ensure we're disconnected
             nets = self.wifi.scan()
+            debug(3, __name__, f"WiFi scan completed, found {len(nets)} networks")
             # debug(4, __name__, "NETS: ",nets)
             # debug(4, __name__, type (nets))
             for ssid in wlan_json.keys():
