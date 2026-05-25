@@ -189,6 +189,14 @@ Tool: [http://micropython.org/webrepl/](http://micropython.org/webrepl/)
 
 ### Weboberfläche
 
+Modernes, responsives Dark-Theme-UI (Astronomie-optimiert), vollständig self-contained (kein externes CSS/JS). Features:
+
+- **Card-basiertes Layout** mit Flexbox/Grid (responsive, mobiltauglich)
+- **HTML5 Color-Picker** mit Live-Farbvorschau und RGB-Nummernfeldern
+- **Farb-Presets** als visuelles Button-Grid (Rot, Grün, Blau, Weiß, Gelb, Lila, Cyan, Orange)
+- **Aktiver ON/OFF-State** mit visuellem Glow-Feedback
+- **Vanilla JS** (kein jQuery), Polling via `fetch()` alle 4 Sekunden
+
 | URL-Pfad | Funktion |
 |---|---|
 | `/` | Haupt-UI (HTML) |
@@ -455,6 +463,14 @@ Tool: [http://micropython.org/webrepl/](http://micropython.org/webrepl/)
 
 ### Web Interface
 
+Modern, responsive dark-theme UI (optimised for astronomy use), fully self-contained (no external CSS/JS). Features:
+
+- **Card-based layout** using Flexbox/Grid (responsive, mobile-friendly)
+- **HTML5 colour picker** with live colour preview and RGB number inputs
+- **Colour presets** as a visual button grid (red, green, blue, white, yellow, purple, cyan, orange)
+- **Active ON/OFF state** with visual glow feedback
+- **Vanilla JS** (no jQuery), polling via `fetch()` every 4 seconds
+
 | URL path | Function |
 |---|---|
 | `/` | Main control UI (HTML) |
@@ -464,6 +480,8 @@ Tool: [http://micropython.org/webrepl/](http://micropython.org/webrepl/)
 | `/data.json` | Current state as JSON |
 | `/web.css` | Stylesheet |
 | `/debug.html` | Live debug log |
+| `/logs.html` | Logs page |
+| `/logs.json` | Logs as JSON for polling |
 
 ---
 

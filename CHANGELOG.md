@@ -9,6 +9,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Session 5] — 2026-05-26
+
+### Changed
+
+- **Webinterface komplett überarbeitet** — `web_html.py`: Tabellen-basiertes Layout durch modernes Card-basiertes Dark-Theme-UI ersetzt. Flexbox/Grid-Layout, responsive, mobiltauglich.
+- **HTML5 Color-Picker** — Interaktiver `<input type="color">` mit Live-Farbvorschau-Div. RGB-Nummernfelder weiterhin als Alternative vorhanden.
+- **Farb-Presets als visuelles Grid** — 8 Preset-Buttons mit farbigem Hintergrund statt Tabellen-Zeilen.
+- **ON/OFF-State-Feedback** — Aktive Buttons erhalten Glow-Effekt via `classList.toggle('active')`.
+- **Dark-Theme (Astronomie)** — Dunkler Hintergrund (#0d1117), GitHub-Dark-Farbpalette, abgerundete Cards, sanfte Transitions.
+- **jQuery entfernt** — `debug_web_page()` und `logs_web_page()` nutzen nun Vanilla JS mit `fetch()` statt jQuery-CDN.
+- **XHR durch fetch() ersetzt** — Alle HTTP-Aufrufe (Polling, Kommandos) nutzen nun die Fetch-API.
+- **CSS modernisiert** — System-Font-Stack, CSS-Custom-Properties für Preset-Farben, kompaktes minifiziertes CSS (~2.8 KB).
+
+---
+
 ## [Session 4] — 2026-03-28
 
 ### Added
