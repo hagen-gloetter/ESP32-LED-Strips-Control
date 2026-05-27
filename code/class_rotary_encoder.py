@@ -40,6 +40,23 @@ from class_debug import debug
 class RotaryIRQ(Rotary):
 
     def __init__(self, pin_num_clk, pin_num_dt, min_val=0, max_val=10, reverse=False, range_mode=Rotary.RANGE_UNBOUNDED, pull_up=False, half_step=False, invert=False):
+        """
+        Initialise the GPIO-backed rotary encoder driver.
+
+        Args:
+            pin_num_clk (int): GPIO number for the CLK signal.
+            pin_num_dt (int): GPIO number for the DT signal.
+            min_val (int): Minimum encoder value.
+            max_val (int): Maximum encoder value.
+            reverse (bool): Reverse the rotation direction when True.
+            range_mode (int): Rotary range mode from the base class.
+            pull_up (bool): Enable internal pull-ups on both inputs.
+            half_step (bool): Enable half-step decoding.
+            invert (bool): Invert the interpreted direction.
+
+        Returns:
+            None
+        """
 
         super().__init__(min_val, max_val, reverse, range_mode, half_step, invert)
 
@@ -54,37 +71,105 @@ class RotaryIRQ(Rotary):
         self._enable_dt_irq(self._process_rotary_pins)
 
     def _enable_clk_irq(self, callback=None):
+        """
+        Enable interrupts for the CLK pin.
+
+        Args:
+            callback (callable | None): IRQ handler to call on pin changes.
+
+        Returns:
+            None
+        """
         self._pin_clk.irq(
             trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING,
             handler=callback)
 
     def _enable_dt_irq(self, callback=None):
+        """
+        Enable interrupts for the DT pin.
+
+        Args:
+            callback (callable | None): IRQ handler to call on pin changes.
+
+        Returns:
+            None
+        """
         self._pin_dt.irq(
             trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING,
             handler=callback)
 
     def _disable_clk_irq(self):
+        """Disable interrupts for the CLK pin.
+
+        Returns:
+            None
+        """
         self._pin_clk.irq(handler=None)
 
     def _disable_dt_irq(self):
+        """Disable interrupts for the DT pin.
+
+        Returns:
+            None
+        """
         self._pin_dt.irq(handler=None)
 
     def _hal_get_clk_value(self):
+        """Return the current logic level of the CLK pin.
+
+        Returns:
+            int: ``0`` or ``1``.
+        """
         return self._pin_clk.value()
 
     def _hal_get_dt_value(self):
+        """Return the current logic level of the DT pin.
+
+        Returns:
+            int: ``0`` or ``1``.
+        """
         return self._pin_dt.value()
 
     def _hal_enable_irq(self):
+        """Enable both rotary input IRQs.
+
+        Returns:
+            None
+        """
         self._enable_clk_irq(self._process_rotary_pins)
         self._enable_dt_irq(self._process_rotary_pins)
 
     def _hal_disable_irq(self):
+        """Disable both rotary input IRQs.
+
+        Returns:
+            None
+        """
         self._disable_clk_irq()
         self._disable_dt_irq()
 
     def _hal_close(self):
+        """Release hardware resources used by the encoder.
+
+        Returns:
+            None
+        """
         self._hal_disable_irq()
+
+    def set_enabled(self, is_enabled):
+        """
+        Enable or disable encoder IRQ processing.
+
+        Args:
+            is_enabled (bool): When True the encoder IRQs are active.
+
+        Returns:
+            None
+        """
+        if is_enabled:
+            self._hal_enable_irq()
+        else:
+            self._hal_disable_irq()
         
     def get_rotary_encoder(self, sw, val_old, is_enabled=True):
         """
@@ -101,11 +186,9 @@ class RotaryIRQ(Rotary):
             int | None: New value if the encoder moved, else ``None``.
         """
         if is_enabled:
-#            global val_old
             val_new = self.value()
             if val_old != val_new:
                 val_old = val_new
-                #debug(4, __name__, 'result = {}'.format(val_new))
                 return val_new
         
 #r = RotaryIRQ(

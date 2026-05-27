@@ -27,6 +27,15 @@ class HumiditySensor:
     """Class to connect your ESP32 to a dht-Sensor"""
 
     def __init__(self, pin=0):
+        """
+        Initialise the DHT11 sensor wrapper.
+
+        Args:
+            pin (int): GPIO number connected to the DHT11 data pin.
+
+        Returns:
+            None
+        """
         self.temperature = 0
         self.humidity = 0
         self.oldtemperature = 0
@@ -86,19 +95,55 @@ class HumiditySensor:
         return self.humidity
 
     def set_oldtemperature(self, old):
+        """
+        Store the fallback temperature value used after read errors.
+
+        Args:
+            old (int): Previous valid temperature.
+
+        Returns:
+            None
+        """
         self.oldtemperature = old
 
     def set_oldhumidity(self, old):
+        """
+        Store the fallback humidity value used after read errors.
+
+        Args:
+            old (int): Previous valid humidity.
+
+        Returns:
+            None
+        """
         self.oldhumidity = old
 
     def get_oldtemperature(self):
+        """
+        Return the cached fallback temperature value.
+
+        Returns:
+            int: Last stored fallback temperature.
+        """
         return self.oldtemperature
 
     def get_oldhumidity(self):
+        """
+        Return the cached fallback humidity value.
+
+        Returns:
+            int: Last stored fallback humidity.
+        """
         return self.oldhumidity
 
 
 def main():
+    """
+    Run a standalone DHT11 read loop for manual testing.
+
+    Returns:
+        None
+    """
     sensor = HumiditySensor()
     while True:
         (temperature, humidity) = sensor.get_humidity_and_temperature()

@@ -34,6 +34,15 @@ class debounced_Button():
     """
 
     def __init__(self, pin=10):
+        """
+        Initialise a debounced button on a pull-up input pin.
+
+        Args:
+            pin (int): GPIO number used for the button input.
+
+        Returns:
+            None
+        """
         self.pin = Pin(pin, mode=Pin.IN, pull=Pin.PULL_UP)
         self.status = "OFF"
         self.cnt = 0
@@ -84,7 +93,17 @@ class debounced_Button():
         """Return the extreme-long-press counter (increments once per ~10 s hold)."""
         return self.xtremelongpress
 
+    def get_holdcount(self):
+        """Return the current hold counter (increments every 10 ms while pressed)."""
+        return self.cnt
+
     def togglebutton(self):
+        """
+        Toggle the cached ON/OFF state.
+
+        Returns:
+            str: The new debounced state.
+        """
         if self.status == "OFF":
             self.status = "ON"
         else:
@@ -95,6 +114,15 @@ global Button1
 global Button2
 
 def ButtonDebounceTimer(timer0):
+    """
+    Poll the demo buttons from a hardware timer callback.
+
+    Args:
+        timer0 (Timer): Triggering timer instance.
+
+    Returns:
+        None
+    """
     global Button1
     global Button2
     b3 = Button1.get_oldstatus()
@@ -111,6 +139,12 @@ def ButtonDebounceTimer(timer0):
 
 
 def main():
+    """
+    Run the standalone debounce test harness.
+
+    Returns:
+        None
+    """
     global Button1
     global Button2
     Button1 = debounced_Button(13)

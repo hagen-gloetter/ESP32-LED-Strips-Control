@@ -30,11 +30,30 @@ class WifiConnect:
     """
 
     def __init__(self):
+        """
+        Initialise cached WiFi state and the default DHCP hostname.
+
+        Returns:
+            None
+        """
         self.wifi_ssid = "offline"
         self.wifi_pw = "hidden"
         self.wifi_ip = "offline"
         self.wifi_status = "offline"
         self.wifi = None
+        self.hostname = "ESP32-Huettenlicht"
+
+    def set_hostname(self, name):
+        """
+        Set the DHCP hostname used on the next WiFi connect/reconnect.
+
+        Args:
+            name (str): Hostname announced to the DHCP server.
+
+        Returns:
+            None
+        """
+        self.hostname = name
 
     def connect(self):
         """
@@ -42,6 +61,9 @@ class WifiConnect:
 
         Scans for available networks and tries each SSID listed in the
         credentials file until a connection is established.
+
+        The scan is performed once up front so reconnect attempts can reuse
+        the last known SSID/password pair without rescanning every time.
 
         Returns:
             list: ``[status (str), ssid (str), ip (str)]``.
@@ -57,17 +79,17 @@ class WifiConnect:
             return ("offline", "offline", "offline")
         else:
             debug(4, __name__, f"connect wifi called with {fn_secrets}")
-            # debug(4, __name__, wlan_json)
-            # debug(4, __name__, type (wlan_json))
-            # for key in wlan_json.keys():
-            #    debug(4, __name__, key)
             self.wifi = network.WLAN(network.STA_IF)
             self.wifi.active(True)
-            self.wifi.disconnect()  # ensure we're disconnected
+            try:
+                # Not every MicroPython build exposes ``dhcp_hostname``.
+                self.wifi.config(dhcp_hostname=self.hostname)
+            except Exception:
+                pass  # older firmware may not support dhcp_hostname
+            # Start from a clean station state before scanning/connecting.
+            self.wifi.disconnect()
             nets = self.wifi.scan()
             debug(3, __name__, f"WiFi scan completed, found {len(nets)} networks")
-            # debug(4, __name__, "NETS: ",nets)
-            # debug(4, __name__, type (nets))
             for ssid in wlan_json.keys():
                 if ssid in str(nets):
                     debug(4, __name__, f"++++++++ Network {ssid} found!")
@@ -101,13 +123,13 @@ class WifiConnect:
             pwd = self.wifi_pw
         try:
             self.wifi.connect(ssid, pwd)
-            timeout = 10000  # 10 Sekunden Timeout
-            start_time = utime.ticks_ms()  # Millisekunden-Z�hler
+            timeout = 10000
+            start_time = utime.ticks_ms()
             while not self.wifi.isconnected():
                 if utime.ticks_diff(utime.ticks_ms(), start_time) > timeout:
                     debug(4, __name__, "Connection timeout reached")
                     break
-                machine.idle()  # save power while waiting
+                machine.idle()  # Yield while waiting instead of busy-spinning.
 
             if self.wifi.isconnected():
                 self.wifi_status = "online"
@@ -124,14 +146,26 @@ class WifiConnect:
             self.wifi_status = "offline"
             self.wifi_ssid = "offline"
             self.wifi_ip = "offline"
-            self.wifi.disconnect()  # ensure clean disconnect
+            self.wifi.disconnect()
         return [self.wifi_status, self.wifi_ssid, self.wifi_ip]
 
     def get_wifi_status(self):
+        """
+        Return the cached connection state without triggering reconnects.
+
+        Returns:
+            list: ``[status, ssid, ip]`` from the cached state.
+        """
         list = [self.wifi_status, self.wifi_ssid, self.wifi_ip]
         return list
 
     def isconnected(self):
+        """
+        Proxy to ``network.WLAN.isconnected()`` for existing callers.
+
+        Returns:
+            bool: ``True`` when the WLAN interface is connected.
+        """
         return self.wifi.isconnected()
 
     def check_connection(self):
@@ -144,9 +178,10 @@ class WifiConnect:
         debug(4, __name__, "check_connection called")
         if self.wifi_ssid == "offline":
             debug(4, __name__, "Attempting to connect to SSID: " + self.wifi_ssid)
-            self.connect()  # not connected at all
+            self.connect()
         elif not self.wifi.isconnected() or self.wifi_status == "offline":
-            # no more  more connected
+            # Reuse the last successful credentials before falling back to a
+            # full rescan on the next explicit ``connect()``.
             self.wifi_status = "offline"
             debug(4, __name__, "Connection lost, trying to reconnect to SSID: " + self.wifi_ssid)
             (self.wifi_status, self.wifi_ssid, self.wifi_ip) = self.try_wifi_connect(
@@ -155,12 +190,24 @@ class WifiConnect:
         return [self.wifi_status, self.wifi_ssid, self.wifi_ip]
 
     def is_connected(self):
+        """
+        Compatibility wrapper returning the same tuple as ``check_connection()``.
+
+        Returns:
+            list: ``[status, ssid, ip]`` after the connection check.
+        """
         debug(4, __name__, "is_connected called")
         (wifi_status, wifi_ssid, wifi_ip) = self.check_connection()
         list = [self.wifi_status, self.wifi_ssid, self.wifi_ip]
         return list
 
     def disconnect(self):
+        """
+        Disconnect and reset the cached connection metadata.
+
+        Returns:
+            None
+        """
         debug(4, __name__, "disconnect called")
         self.wifi.disconnect()
         self.wifi_status = "offline"
@@ -168,13 +215,24 @@ class WifiConnect:
         self.wifi_ip = "offline"
 
     def stop_all(self):
+        """
+        Stop WiFi activity; kept for symmetry with other subsystem classes.
+
+        Returns:
+            None
+        """
         debug(4, __name__, "stop_all called")
         self.disconnect()
-        #self.wifi.disconnect()
 
 def main():
-    wifi = WifiConnect()  # Init the class
-    (wifi_status, wifi_ssid, wifi_ip) = wifi.connect()  # connect to wifi
+    """
+    Run the standalone WiFi connection test loop.
+
+    Returns:
+        None
+    """
+    wifi = WifiConnect()
+    (wifi_status, wifi_ssid, wifi_ip) = wifi.connect()
     i = 0
     while i == 0:
         list = wifi.check_connection()

@@ -3,5 +3,8 @@
     "Fade_speed": 16,
     "DebugLevel": 4,
     "LOOP_MS": 100,
-    "WIFI_CHECK_TICKS": 300
+    "WIFI_CHECK_TICKS": 300,
+    "auto_off_minutes": 120,
+    "hostname": "ESP32-Huettenlicht",
+    "rotary_encoder_enabled": 0
 }

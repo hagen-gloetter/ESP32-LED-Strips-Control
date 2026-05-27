@@ -117,10 +117,16 @@ graph TD
 |---|---|
 | Weiß-Taster (kurz) | Weißlicht ON/OFF (Rot hat Vorrang) |
 | Rot-Taster (kurz) | Rotlicht ON; schaltet Weiß ab wenn nötig |
-| Weiß-Taster (lang >5 s) | Reset: Weißlicht volle Helligkeit (1023) |
-| Rot-Taster (lang >5 s) | Reset: Rotlicht volle Helligkeit (1023) |
+| Weiß 2× schnell (<2 s) | Helligkeit 50% |
+| Weiß 4× schnell (<2 s) | Helligkeit 25% |
+| Weiß 10× schnell (<6 s) | Easter Egg: Rainbow |
+| Rot 2× schnell (<2 s) | Helligkeit 50% |
+| Rot 4× schnell (<2 s) | Helligkeit 25% |
+| Rot 10× schnell (<6 s) | Easter Egg: Zufallsfarben |
+| Weiß/Rot gehalten (>500 ms) | Hold-to-Dim bis Mindesthelligkeit |
 | Drehgeber rechts | Helligkeit erhöhen (2^Wert, max 1024) |
 | Drehgeber links | Helligkeit verringern |
+| Auto-Off | Schaltet nach konfigurierbarer Zeit automatisch aus |
 
 PWM-Frequenz: **7321 Hz** (Primzahl, verhindert Moire-Artefakte in Kameras und Augen)
 
@@ -149,11 +155,11 @@ Konstanten können in `config.json` angepasst werden (Fallback auf Defaults bei 
 | `LOOP_MS` | `100` | Haupt-Loop-Takt in ms (10 Hz) |
 | `WIFI_CHECK_TICKS` | `300` | WiFi-Check alle 300 × 100 ms = 30 s |
 | `Brightness` | `1024` | Anfangshelligkeit (0–1023) |
-| `Fade_speed` | `16` | Fade-Schrittgröße pro Timer-Tick |
-| `DebugLevel` | `4` | Debug-Level (0=none, 4=verbose) |
-
----
-| `DebugLevel` | `4` | 0=keine, 1=Fehler, 2=Warn, 3=Info, 4=verbose |
+| `Fade_speed` | `16` | Fade-Schrittgröße pro Timer-Tick (1–64) |
+| `DebugLevel` | `4` | 1=Fehler, 2=Warn, 3=Info, 4=verbose |
+| `auto_off_minutes` | `120` | Auto-Off Timer in Minuten (0 = deaktiviert) |
+| `hostname` | `ESP32-Huettenlicht` | WiFi DHCP-Hostname |
+| `rotary_encoder_enabled` | `0` | Drehgeber-Auswertung aktiv (`1`) oder deaktiviert (`0`) |
 
 WDT-Timeout: **15 000 ms** (> WiFi-Connect-Timeout von 10 000 ms).
 
@@ -195,6 +201,8 @@ Modernes, responsives Dark-Theme-UI (Astronomie-optimiert), vollständig self-co
 - **HTML5 Color-Picker** mit Live-Farbvorschau und RGB-Nummernfeldern
 - **Farb-Presets** als visuelles Button-Grid (Rot, Grün, Blau, Weiß, Gelb, Lila, Cyan, Orange)
 - **Aktiver ON/OFF-State** mit visuellem Glow-Feedback
+- **Verstecktes Easter-Egg-Panel** mit Rainbow/Random/Stop
+- **Config-Seite** für Fade Speed, Auto-Off, Debug Level, Hostname, Rotary Encoder ON/OFF und Reset
 - **Vanilla JS** (kein jQuery), Polling via `fetch()` alle 4 Sekunden
 
 | URL-Pfad | Funktion |
@@ -203,6 +211,10 @@ Modernes, responsives Dark-Theme-UI (Astronomie-optimiert), vollständig self-co
 | `/?red=on` / `/?red=off` | Rotlicht ein/aus |
 | `/?white=on` / `/?white=off` | Weißlicht ein/aus |
 | `/?r=R&g=G&b=B` | RGB-Wert direkt setzen (0–255) |
+| `/?easter=rainbow` / `random` / `off` | Easter Egg steuern |
+| `/?config_save&fade=N&autooff=N&debug=N&host=X&rotary=0|1` | Konfiguration speichern |
+| `/?reset=1` | ESP32 Neustart |
+| `/config.html` | Konfigurationsseite |
 | `/data.json` | Aktueller Status als JSON |
 | `/web.css` | Stylesheet |
 | `/debug.html` | Live-Debug-Log |
@@ -396,10 +408,16 @@ graph TD
 |---|---|
 | White button (short) | Toggle white light ON/OFF (red takes priority) |
 | Red button (short) | Red light ON; switches white off if needed |
-| White button (long >5 s) | Reset: white light full brightness (1023) |
-| Red button (long >5 s) | Reset: red light full brightness (1023) |
+| White 2× fast (<2 s) | Set brightness to 50% |
+| White 4× fast (<2 s) | Set brightness to 25% |
+| White 10× fast (<6 s) | Easter Egg: rainbow |
+| Red 2× fast (<2 s) | Set brightness to 50% |
+| Red 4× fast (<2 s) | Set brightness to 25% |
+| Red 10× fast (<6 s) | Easter Egg: random colours |
+| White/Red held (>500 ms) | Hold-to-dim down to a safe minimum |
 | Rotary encoder CW | Increase brightness (2^value, max 1024) |
 | Rotary encoder CCW | Decrease brightness |
+| Auto-Off | Turns lights off after a configurable timeout |
 
 PWM frequency: **7321 Hz** (prime number, avoids moiré artefacts in cameras and eyes).
 
@@ -419,15 +437,18 @@ PWM frequency: **7321 Hz** (prime number, avoids moiré artefacts in cameras and
 
 ### Configuration
 
-#### Constants in `main.py`
+#### Constants in `config.json`
 
 | Constant | Default | Description |
 |---|---|---|
 | `LOOP_MS` | `100` | Main loop interval in ms (10 Hz) |
-| `WIFI_CHECK_TICKS` | `600` | WiFi health check every 600 × 100 ms = 60 s |
+| `WIFI_CHECK_TICKS` | `300` | WiFi health check every 300 × 100 ms = 30 s |
 | `Brightness` | `1024` | Initial brightness (0–1023) |
-| `Fade_speed` | `16` | Fade step size per timer tick |
-| `DebugLevel` | `4` | 0=none, 1=error, 2=warn, 3=info, 4=verbose |
+| `Fade_speed` | `16` | Fade step size per timer tick (1–64) |
+| `DebugLevel` | `4` | 1=error, 2=warn, 3=info, 4=verbose |
+| `auto_off_minutes` | `120` | Auto-off timer in minutes (0 = disabled) |
+| `hostname` | `ESP32-Huettenlicht` | WiFi DHCP hostname |
+| `rotary_encoder_enabled` | `0` | Enable (`1`) or disable (`0`) rotary encoder handling |
 
 WDT timeout: **15 000 ms** (> WiFi connect timeout of 10 000 ms).
 
@@ -469,6 +490,8 @@ Modern, responsive dark-theme UI (optimised for astronomy use), fully self-conta
 - **HTML5 colour picker** with live colour preview and RGB number inputs
 - **Colour presets** as a visual button grid (red, green, blue, white, yellow, purple, cyan, orange)
 - **Active ON/OFF state** with visual glow feedback
+- **Hidden Easter Egg panel** with rainbow/random/stop actions
+- **Config page** for fade speed, auto-off, debug level, hostname, rotary encoder ON/OFF, and reset
 - **Vanilla JS** (no jQuery), polling via `fetch()` every 4 seconds
 
 | URL path | Function |
@@ -477,6 +500,10 @@ Modern, responsive dark-theme UI (optimised for astronomy use), fully self-conta
 | `/?red=on` / `/?red=off` | Red light on/off |
 | `/?white=on` / `/?white=off` | White light on/off |
 | `/?r=R&g=G&b=B` | Set RGB directly (0–255) |
+| `/?easter=rainbow` / `random` / `off` | Control Easter Egg modes |
+| `/?config_save&fade=N&autooff=N&debug=N&host=X&rotary=0|1` | Save configuration |
+| `/?reset=1` | Reboot the ESP32 |
+| `/config.html` | Configuration page |
 | `/data.json` | Current state as JSON |
 | `/web.css` | Stylesheet |
 | `/debug.html` | Live debug log |

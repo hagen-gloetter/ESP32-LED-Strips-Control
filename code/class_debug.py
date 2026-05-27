@@ -43,6 +43,9 @@ def debug_init(the_max_size=100):
     Args:
         the_max_size (int): Maximum number of messages to retain before
             the oldest entry is dropped. Defaults to 100.
+
+    Returns:
+        None
     """
     global max_size
     global string_list
@@ -62,6 +65,9 @@ def debug(level=4, ctx=None, message=None):
         level (int): Severity (1=error … 4=verbose). Lower is more critical.
         ctx (any): Context label, typically ``__name__``.
         message (any): Message text.
+
+    Returns:
+        None
     """
     global max_size
     global string_list

@@ -9,6 +9,38 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Session 6] — 2026-05-27
+
+### Added
+
+- **Easter Eggs** — Button_W 10× in 6s → Rainbow-Effekt, Button_R 10× → Zufallsfarben. Deaktivierung durch beliebigen Tastendruck oder über Web-UI.
+- **Rapid-Press Helligkeitssteuerung** — 2× drücken = 50%, 4× = 25%.
+- **Hold-to-Dim** — Taste gehalten (>500 ms) reduziert die Helligkeit progressiv.
+- **Auto-Off Timer** — Konfigurierbar (0–480 min, Default 120 min) und aktiv für Lichtmodi sowie Easter Eggs.
+- **Konfigurations-Webseite** — Neue Route `/config.html` für Fade Speed, Auto-Off Timer, Debug Level und WiFi Hostname.
+- **WiFi Hostname** — Konfigurierbarer DHCP-Hostname mit Default `ESP32-Huettenlicht`.
+- **Reset-Button im Web-UI** — Neustart des ESP32 direkt aus der Config-Seite, abgesichert mit Bestätigungsdialog.
+- **Rotary Encoder ON/OFF** — Neuer Web-Schalter in der Config-Seite. Default ist OFF, Status wird in `config.json` gespeichert.
+
+### Changed
+
+- **`set_JSON()` auf `ujson.dumps()` umgestellt** — Weniger String-Konkatenation, neue Statusfelder für `auto_off_minutes`, `easter_egg` und `hostname`, Helligkeit jetzt als Prozent.
+- **Debug/Logs-Seiten redesigned** — Shared CSS, Card-Layout, Scroll-Container und Navigation zurück zur Hauptseite.
+- **Hauptseite erweitert** — System-Card zeigt jetzt Links zu Einstellungen, Logs, Debug sowie Live-Infos für Auto-Off und Easter Egg Status.
+- **Rainbow-Modus verbessert** — Direkte HSV→RGB-Berechnung pro Tick hält die Helligkeit konstant.
+- **Random-Modus verbessert** — Zufallsfarben werden jetzt aus HSV generiert und wirken satter.
+- **Optionaler Drehgeber sauber behandelt** — Bei OFF wird die Encoder-IRQ-Verarbeitung deaktiviert statt nur das Ergebnis zu ignorieren.
+
+### Fixed
+
+- **BUG-14** — `main.py` `thread_webserver()`: Fehlende `global`-Deklarationen für Web-Änderungen (`EasterEgg_Mode`, Auto-Off, Config-Werte, Hostname). Ohne `global` liefen Web-Änderungen nur lokal im Thread und hatten keine Wirkung auf die eigentliche Steuerlogik. **Severity: CRITICAL**
+- **BUG-15** — `main.py` RGB-Parsing: Der Blauwert wurde bis ins HTTP-Header-Ende gelesen (`"...HTTP/1.1\r\n"`) und ließ Web-RGB-Kommandos abstürzen. Jetzt wird sauber am Leerzeichen bzw. `&` terminiert. **Severity: HIGH**
+- **BUG-16** — `main.py` Config-Save: Nach Einführung des Hostname-Parameters wurde der Debug-Wert als `"4&host=..."` gelesen und konnte nicht mehr in `int` umgewandelt werden. Jetzt wird zuerst an `&` terminiert. **Severity: HIGH**
+- **Easter Egg State Leak** — Beim Abbruch werden jetzt Hue, Zähler und Auto-Off-Start sauber zurückgesetzt.
+- **Custom RGB Override** — Web-RGB deaktiviert jetzt Weiß-/Rotmodus und Easter Egg, damit die Farbe nicht sofort überschrieben wird.
+
+---
+
 ## [Session 5] — 2026-05-26
 
 ### Changed

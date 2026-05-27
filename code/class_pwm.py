@@ -51,6 +51,20 @@ class LEDStrip:
         GPIO3 (int): Pin number for the blue channel.
     """
     def __init__(self, R=0, G=0, B=0, GPIO1=27, GPIO2=25, GPIO3=32):
+        """
+        Create one PWM-driven RGB strip instance.
+
+        Args:
+            R (int): Initial red duty cycle.
+            G (int): Initial green duty cycle.
+            B (int): Initial blue duty cycle.
+            GPIO1 (int): Red-channel GPIO.
+            GPIO2 (int): Green-channel GPIO.
+            GPIO3 (int): Blue-channel GPIO.
+
+        Returns:
+            None
+        """
         frequency = 7321  # Prime for no visible artefacts in eyes and cellphones
         self.R = R
         self.G = G
@@ -86,6 +100,12 @@ class LEDStrip:
 
 
 def main():
+    """
+    Run a simple RGB fade demo across all configured strips.
+
+    Returns:
+        None
+    """
     ColorR = 0
     ColorG = 0
     ColorB = 0
