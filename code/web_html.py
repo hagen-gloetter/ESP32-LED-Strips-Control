@@ -313,12 +313,11 @@ def web_css():
     Returns:
         str: CSS rules for the web interface.
     """
-    css = """
-*{box-sizing:border-box;margin:0;padding:0}
+    css = """*{box-sizing:border-box;margin:0;padding:0}
 html{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0d1117;color:#e6edf3}
 body{min-height:100vh;padding:1rem}
 header{text-align:center;padding:1.5rem 0}
-h1{color:#58a6ff;font-size:1.6rem;letter-spacing:.5px}
+h1{color:#58a6ff;font-size:1.6rem}
 h2{color:#8b949e;font-size:1rem;margin-bottom:.8rem;border-bottom:1px solid #21262d;padding-bottom:.4rem}
 main{max-width:600px;margin:0 auto;display:flex;flex-direction:column;gap:1rem}
 .card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:1.2rem;box-shadow:0 2px 8px rgba(0,0,0,.4)}
@@ -328,8 +327,10 @@ main{max-width:600px;margin:0 auto;display:flex;flex-direction:column;gap:1rem}
 .btn-group{display:flex;gap:.4rem}
 .btn{border:none;border-radius:8px;padding:.5rem 1.2rem;font-size:.9rem;cursor:pointer;transition:all .2s;color:#fff;background:#30363d}
 .btn:hover{transform:scale(1.05)}
-.btn-on{background:#238636}.btn-on.active{background:#2ea043;box-shadow:0 0 10px #2ea043}
-.btn-off{background:#da3633}.btn-off.active{background:#f85149;box-shadow:0 0 10px #f85149}
+.btn-on{background:#238636}
+.btn-on.active{background:#2ea043;box-shadow:0 0 10px #2ea043}
+.btn-off{background:#da3633}
+.btn-off.active{background:#f85149;box-shadow:0 0 10px #f85149}
 .btn-send{background:#1f6feb;margin-top:.5rem;width:100%}
 .btn-send:hover{background:#388bfd}
 .color-section{display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap}
@@ -342,7 +343,7 @@ main{max-width:600px;margin:0 auto;display:flex;flex-direction:column;gap:1rem}
 .rgb-field input{flex:1;background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:.4rem;color:#e6edf3;font-size:.9rem}
 .brightness-row{margin-top:.6rem;color:#8b949e;font-size:.85rem}
 .presets-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem}
-.preset{position:relative;background:var(--c);color:#fff;font-size:.8rem;padding:.6rem .3rem;text-shadow:0 1px 2px rgba(0,0,0,.7);border-radius:8px;border:2px solid transparent}
+.preset{background:var(--c);color:#fff;font-size:.8rem;padding:.6rem .3rem;text-shadow:0 1px 2px rgba(0,0,0,.7);border-radius:8px;border:2px solid transparent}
 .preset:hover{border-color:#58a6ff;transform:scale(1.08)}
 .sensor-grid{display:flex;gap:1.5rem;justify-content:center}
 .sensor-item{font-size:1.1rem;display:flex;align-items:center;gap:.4rem}
@@ -352,11 +353,11 @@ main{max-width:600px;margin:0 auto;display:flex;flex-direction:column;gap:1rem}
 .links{margin-top:.8rem;display:flex;gap:1rem;justify-content:center}
 .links a{color:#58a6ff;text-decoration:none;font-size:.85rem}
 .links a:hover{text-decoration:underline}
-.easteregg{border:2px solid transparent;background-image:linear-gradient(#161b22,#161b22),linear-gradient(135deg,#ff0000,#ff8800,#ffff00,#00ff00,#0088ff,#8800ff,#ff0000);background-origin:border-box;background-clip:padding-box,border-box}
+.easteregg{border:2px solid transparent;background-image:linear-gradient(#161b22,#161b22),linear-gradient(135deg,#f00,#ff0,#0f0,#0ff,#80f,#f00);background-origin:border-box;background-clip:padding-box,border-box}
 .ee-buttons{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap}
-.ee-rainbow{background:linear-gradient(135deg,#ff0000,#ff8800,#ffff00,#00ff00,#0088ff,#8800ff);color:#fff;font-size:1rem;padding:.7rem 1.2rem}
-.ee-random{background:linear-gradient(135deg,#ff00ff,#00ffff,#ffff00);color:#111;font-size:1rem;padding:.7rem 1.2rem}
-.ee-stop{background:#6e7681;color:#fff;font-size:1rem;padding:.7rem 1.2rem}
+.ee-rainbow{background:linear-gradient(135deg,#f00,#ff0,#0f0,#0ff,#80f);color:#fff;padding:.7rem 1.2rem}
+.ee-random{background:linear-gradient(135deg,#f0f,#0ff,#ff0);color:#111;padding:.7rem 1.2rem}
+.ee-stop{background:#6e7681;color:#fff;padding:.7rem 1.2rem}
 .config-grid{display:flex;flex-direction:column;gap:.8rem}
 .config-row{display:flex;align-items:center;justify-content:space-between;gap:.8rem}
 .config-row label{flex:1;font-size:.95rem}
@@ -365,14 +366,13 @@ main{max-width:600px;margin:0 auto;display:flex;flex-direction:column;gap:1rem}
 .btn-save:hover{background:#2ea043}
 .btn-danger{background:#da3633;width:100%;margin-top:.5rem}
 .btn-danger:hover{background:#f85149}
-.log-output{font-family:'Courier New',monospace;color:#3fb950;font-size:12px;white-space:pre-wrap;background:#0d1117;border-radius:8px;padding:1rem;max-height:70vh;overflow-y:auto;border:1px solid #30363d}
+.log-output{font-family:monospace;color:#3fb950;font-size:12px;white-space:pre-wrap;background:#0d1117;border-radius:8px;padding:1rem;max-height:70vh;overflow-y:auto;border:1px solid #30363d}
 .status-badge{display:inline-block;padding:.2rem .6rem;border-radius:4px;font-size:.8rem;font-weight:bold}
-.status-badge.saved{background:#238636;color:#fff}
-"""
+.status-badge.saved{background:#238636;color:#fff}"""
     return css
 
 
-def config_web_page(fade_speed, auto_off, debug_level, hostname, rotary_enabled):
+def config_web_page(fade_speed, auto_off, debug_level, hostname, rotary_enabled, humidity_enabled):
     """
     Return the configuration page as an HTML string.
 
@@ -382,6 +382,7 @@ def config_web_page(fade_speed, auto_off, debug_level, hostname, rotary_enabled)
         debug_level (int): Current debug level (1-4).
         hostname (str): Current WiFi hostname.
         rotary_enabled (bool): Current rotary encoder enabled state.
+        humidity_enabled (bool): Current humidity sensor enabled state.
 
     Returns:
         str: Full HTML document with config-save and reset actions.
@@ -436,6 +437,13 @@ def config_web_page(fade_speed, auto_off, debug_level, hostname, rotary_enabled)
             <option value="1\"""" + (' selected' if rotary_enabled else '') + """>ON</option>
           </select>
         </div>
+        <div class="config-row">
+          <label>DHT11 Sensor</label>
+          <select id="cfg_humidity">
+            <option value="0\"""" + (' selected' if not humidity_enabled else '') + """>OFF</option>
+            <option value="1\"""" + (' selected' if humidity_enabled else '') + """>ON</option>
+          </select>
+        </div>
       </div>
       <button class="btn btn-save" onclick="saveConfig()">&#128190; Speichern</button>
       <div id="save_status" style="text-align:center;margin-top:.5rem"></div>
@@ -459,6 +467,7 @@ def config_web_page(fade_speed, auto_off, debug_level, hostname, rotary_enabled)
     var a=document.getElementById('cfg_autooff').value;
     var d=document.getElementById('cfg_debug').value;
     var r=document.getElementById('cfg_rotary').value;
+    var hm=document.getElementById('cfg_humidity').value;
     // Keep the hostname router-friendly and within common DHCP limits.
     var h=document.getElementById('cfg_host').value.replace(/[^a-zA-Z0-9-]/g,'').substring(0,32)||'ESP32-Huettenlicht';
     document.getElementById('cfg_host').value=h;
@@ -466,9 +475,10 @@ def config_web_page(fade_speed, auto_off, debug_level, hostname, rotary_enabled)
     a=Math.max(0,Math.min(480,parseInt(a)||120));
     d=Math.max(1,Math.min(4,parseInt(d)||4));
     r=(parseInt(r)||0)?1:0;
+    hm=(parseInt(hm)||0)?1:0;
     // GET keeps the ESP32 handler simple because the server only has to parse
     // the request line and does not need HTTP body handling.
-    fetch('/?config_save&fade='+f+'&autooff='+a+'&debug='+d+'&host='+h+'&rotary='+r).then(function(){
+    fetch('/?config_save&fade='+f+'&autooff='+a+'&debug='+d+'&host='+h+'&rotary='+r+'&humidity='+hm).then(function(){
       document.getElementById('save_status').innerHTML='<span class="status-badge saved">&#10003; Gespeichert!</span>';
       setTimeout(function(){document.getElementById('save_status').innerHTML=''},3000);
     });

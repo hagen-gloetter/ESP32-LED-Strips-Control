@@ -62,14 +62,13 @@ import time
 import machine
 import gc
 import network
-import urandom
 # Custom Includes
 from class_debug import debug_init, debug, get_debug_msg
 from class_rotary_encoder import RotaryIRQ
 from class_pwm import LEDStrip
 from class_debounce import debounced_Button
 from class_humidity_sensor import HumiditySensor
-from web_html import web_page, debug_web_page, logs_web_page, web_css, config_web_page
+# web_html is imported lazily AFTER WiFi connects to save RAM during scan
 import class_wifi_connection
 import ujson
 
@@ -92,6 +91,7 @@ try:
     auto_off_minutes = config.get("auto_off_minutes", 120)
     hostname = config.get("hostname", "ESP32-Huettenlicht")
     rotary_encoder_enabled = 1 if config.get("rotary_encoder_enabled", 0) else 0
+    humidity_sensor_enabled = 1 if config.get("humidity_sensor_enabled", 1) else 0
     debug(3, __name__, "Configuration loaded from config.json")
 except Exception as e:
     debug(2, __name__, f"Failed to load config.json: {e}, using defaults")
@@ -103,6 +103,7 @@ except Exception as e:
     auto_off_minutes = 120
     hostname = "ESP32-Huettenlicht"
     rotary_encoder_enabled = 0
+    humidity_sensor_enabled = 1
 
 debug(4, __name__, "main.py start")
 
@@ -166,6 +167,8 @@ def update_all_strips(r, g, b):
     Returns:
         None
     """
+    global ColorRGB
+    ColorRGB = [r, g, b]
     Strip1.SetColor(r, g, b)
     Strip2.SetColor(r, g, b)
     Strip3.SetColor(r, g, b)
@@ -218,7 +221,13 @@ r.set_enabled(isRotaryEncoder)
 
 # rotary encoder init end
 
-temperature_sensor = HumiditySensor(PIN_DHT)
+if humidity_sensor_enabled:
+    temperature_sensor = HumiditySensor(PIN_DHT)
+else:
+    temperature_sensor = None
+    temperature = "NA"
+    humidity = "NA"
+    debug(4, __name__, "Humidity sensor disabled in config")
 
 # Webserver start
 WS_initstage = 0
@@ -226,10 +235,25 @@ websocket = ""
 
 # setup Wifi
 global wifi
+gc.collect()
+debug(4, __name__, f"Free RAM before WiFi: {gc.mem_free()} bytes")
 wifi = class_wifi_connection.WifiConnect()
 wifi.set_hostname(hostname)
 (wifi_status, wifi_ssid, wifi_ip) = wifi.connect()
 debug(4, __name__, "Wifi connection established")
+
+# Start WebREPL after WiFi STA is connected (moved from boot.py to save RAM during scan)
+try:
+    import webrepl
+    webrepl.start()
+    debug(4, __name__, "WebREPL started")
+except Exception as e:
+    debug(2, __name__, f"WebREPL failed: {e}")
+
+# Import web_html AFTER WiFi connect to avoid RAM pressure during scan
+gc.collect()
+from web_html import web_page, debug_web_page, logs_web_page, web_css, config_web_page
+debug(4, __name__, f"Free RAM after web_html import: {gc.mem_free()} bytes")
 
 
 def get_websocket():
@@ -285,6 +309,8 @@ def thread_webserver(delay, name):
         global hostname
         global isRotaryEncoder
         global rotary_val_old
+        global humidity_sensor_enabled
+        global temperature_sensor
         global temperature
         global humidity
         conn = None
@@ -296,7 +322,8 @@ def thread_webserver(delay, name):
 
             # Refresh sensor data opportunistically on web traffic so the UI
             # stays current without a dedicated sensor polling thread.
-            (temperature, humidity) = temperature_sensor.get_humidity_and_temperature()
+            if humidity_sensor_enabled and temperature_sensor is not None:
+                (temperature, humidity) = temperature_sensor.get_humidity_and_temperature()
 
             # Parse the request directly from the first line. This keeps the
             # socket handling simple and predictable on MicroPython.
@@ -350,12 +377,14 @@ def thread_webserver(delay, name):
                 _auto_off_start = time.ticks_ms()
                 debug(4, __name__, "Web RED ON")
                 ColorSollwerte = [Brightness, 0, 0]
+                update_all_strips(ColorSollwerte[0], ColorSollwerte[1], ColorSollwerte[2])
             red_off = request.find("/?red=off")
             if red_off == 6:
                 Light_R = "OFF"
                 _auto_off_start = 0
                 debug(4, __name__, "Web RED OFF")
                 ColorSollwerte = [0, 0, 0]
+                update_all_strips(ColorSollwerte[0], ColorSollwerte[1], ColorSollwerte[2])
             # white
             white_on = request.find("/?white=on")
             if white_on == 6:
@@ -365,12 +394,14 @@ def thread_webserver(delay, name):
                 _auto_off_start = time.ticks_ms()
                 debug(4, __name__, "Web white ON")
                 ColorSollwerte = [Brightness, Brightness, Brightness]
+                update_all_strips(ColorSollwerte[0], ColorSollwerte[1], ColorSollwerte[2])
             white_off = request.find("/?white=off")
             if white_off == 6:
                 Light_W = "OFF"
                 _auto_off_start = 0
                 debug(4, __name__, "Web white OFF")
                 ColorSollwerte = [0, 0, 0]
+                update_all_strips(ColorSollwerte[0], ColorSollwerte[1], ColorSollwerte[2])
             # Easter Egg endpoints
             easter_rainbow = request.find("/?easter=rainbow")
             if easter_rainbow == 6:
@@ -415,6 +446,7 @@ def thread_webserver(delay, name):
                             dbg_end = len(request)
                         new_debug = int(request[dbg_idx+7:dbg_end])
                         rotary_idx = request.find("&rotary=")
+                        humidity_idx = request.find("&humidity=")
                         # Validate ranges
                         new_fade = max(1, min(64, new_fade))
                         new_autooff = max(0, min(480, new_autooff))
@@ -428,6 +460,15 @@ def thread_webserver(delay, name):
                             new_rotary = 1 if int(request[rotary_idx+8:rotary_end]) else 0
                         else:
                             new_rotary = 0
+                        if humidity_idx != -1:
+                            humidity_end = request.find("&", humidity_idx+10)
+                            if humidity_end == -1:
+                                humidity_end = request.find(" ", humidity_idx+10)
+                            if humidity_end == -1:
+                                humidity_end = len(request)
+                            new_humidity_sensor = 1 if int(request[humidity_idx+10:humidity_end]) else 0
+                        else:
+                            new_humidity_sensor = 1 if humidity_sensor_enabled else 0
                         # Hostname is optional; keep the current value if the
                         # browser does not send the field.
                         host_idx = request.find("&host=")
@@ -447,8 +488,17 @@ def thread_webserver(delay, name):
                         DebugLevel = new_debug
                         hostname = new_hostname
                         isRotaryEncoder = new_rotary == 1
+                        humidity_sensor_enabled = new_humidity_sensor == 1
                         rotary_val_old = r.value()
                         r.set_enabled(isRotaryEncoder)
+                        if humidity_sensor_enabled:
+                            temperature_sensor = HumiditySensor(PIN_DHT)
+                            debug(2, __name__, "Humidity sensor enabled")
+                        else:
+                            temperature_sensor = None
+                            temperature = "NA"
+                            humidity = "NA"
+                            debug(2, __name__, "Humidity sensor disabled")
                         wifi.set_hostname(hostname)
                         # Save to config.json
                         cfg = {
@@ -459,7 +509,8 @@ def thread_webserver(delay, name):
                             "WIFI_CHECK_TICKS": WIFI_CHECK_TICKS,
                             "auto_off_minutes": auto_off_minutes,
                             "hostname": hostname,
-                            "rotary_encoder_enabled": 1 if isRotaryEncoder else 0
+                            "rotary_encoder_enabled": 1 if isRotaryEncoder else 0,
+                            "humidity_sensor_enabled": 1 if humidity_sensor_enabled else 0
                         }
                         with open("config.json", "w") as f:
                             ujson.dump(cfg, f)
@@ -518,7 +569,7 @@ def thread_webserver(delay, name):
                 sleep_ms(300)
                 machine.reset()
             elif configrequest > 0:  # Config page
-                response = config_web_page(Fade_speed, auto_off_minutes, DebugLevel, hostname, isRotaryEncoder)
+                response = config_web_page(Fade_speed, auto_off_minutes, DebugLevel, hostname, isRotaryEncoder, humidity_sensor_enabled)
                 conn.send(b"HTTP/1.1 200 OK\n")
                 conn.send(b"Content-Type: text/html\n")
                 conn.send(b"Connection: close\n\n")
@@ -641,6 +692,7 @@ def strips_update_Brightness():
     # Easter Egg: Random – vivid colors via HSV
     elif EasterEgg_Mode == "random":
         if ColorRGB[0] == ColorSollwerte[0] and ColorRGB[1] == ColorSollwerte[1] and ColorRGB[2] == ColorSollwerte[2]:
+            import urandom
             ColorSollwerte = hsv_to_rgb_1023(urandom.getrandbits(9) % 360)
     else:
         # Normal operation
@@ -739,6 +791,7 @@ def Button_W_switch():
         txt = "Button_W_switch: Easter Egg RAINBOW activated!"
 
     debug(2, __name__ + str(Button_Counter), txt)
+    update_all_strips(ColorSollwerte[0], ColorSollwerte[1], ColorSollwerte[2])
     set_JSON(Light_W, Light_R)
 
 
@@ -818,6 +871,7 @@ def Button_R_switch():
         txt = "Button_R_switch: Easter Egg RANDOM activated!"
 
     debug(2, __name__ + str(Button_Counter), txt)
+    update_all_strips(ColorSollwerte[0], ColorSollwerte[1], ColorSollwerte[2])
     set_JSON(Light_W, Light_R)
 
 
@@ -845,6 +899,9 @@ def RotaryController():
     global rotary_val_old
     global rotarySwitch
     global Brightness
+    global isRotaryEncoder
+    if not isRotaryEncoder:
+        return
     if Light_W == "ON" or Light_R == "ON":  # only if at least one switch is on
         r_value = r.get_rotary_encoder(rotarySwitch, rotary_val_old, isRotaryEncoder)
         if r_value is not None:
@@ -852,8 +909,6 @@ def RotaryController():
             Brightness = (
                 2**r_value
             )  # translate 16 steps to 255 color-steps and set limits
-        else:
-            debug(4, __name__, "Rotary encoder returned None (no change)")
         # debug(4, __name__, f"Brightness update ={Brightness} = {r_value}")
 
 
@@ -996,7 +1051,10 @@ timer0.init(period=53, mode=Timer.PERIODIC, callback=LEDfadeTimer)
 
 debug(4, __name__, "Start RotaryController Timer")
 timer1 = Timer(1)
-timer1.init(period=59, mode=Timer.PERIODIC, callback=RotaryControllerTimer)
+if isRotaryEncoder:
+    timer1.init(period=59, mode=Timer.PERIODIC, callback=RotaryControllerTimer)
+else:
+    debug(4, __name__, "Rotary encoder disabled in config")
 
 debug(4, __name__, "Start Button Debounce Timer")
 timer2 = Timer(2)

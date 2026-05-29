@@ -71,6 +71,7 @@ class WifiConnect:
         """
         debug(4, __name__, "connect wifi called")
         fn_secrets = "secrets_wifi.json"
+        debug(4, __name__, "WiFi debug: opening secrets file")
         try:
             with open(fn_secrets) as f:
                 wlan_json = ujson.load(f)
@@ -79,29 +80,32 @@ class WifiConnect:
             return ("offline", "offline", "offline")
         else:
             debug(4, __name__, f"connect wifi called with {fn_secrets}")
-            self.wifi = network.WLAN(network.STA_IF)
-            self.wifi.active(True)
             try:
-                # Not every MicroPython build exposes ``dhcp_hostname``.
-                self.wifi.config(dhcp_hostname=self.hostname)
+                import gc
+                debug(4, __name__, "WiFi debug: free RAM before WLAN object: " + str(gc.mem_free()))
             except Exception:
-                pass  # older firmware may not support dhcp_hostname
-            # Start from a clean station state before scanning/connecting.
-            self.wifi.disconnect()
-            nets = self.wifi.scan()
-            debug(3, __name__, f"WiFi scan completed, found {len(nets)} networks")
+                pass
+            debug(4, __name__, "WiFi step: create STA interface")
+            self.wifi = network.WLAN(network.STA_IF)
+            debug(4, __name__, "WiFi debug: STA interface object created")
+            debug(4, __name__, "WiFi step: enable STA interface")
+            self.wifi.active(True)
+            debug(4, __name__, "WiFi step: STA interface enabled")
+            try:
+                debug(4, __name__, "WiFi debug: status after active(True): " + str(self.wifi.status()))
+            except Exception as e:
+                debug(4, __name__, "WiFi debug: status() failed: " + str(e))
+            utime.sleep_ms(100)
             for ssid in wlan_json.keys():
-                if ssid in str(nets):
-                    debug(4, __name__, f"++++++++ Network {ssid} found!")
-                    pwd = wlan_json[ssid]
-                    debug(4, __name__, "Trying to connect to SSID:" + ssid)
-                    (
-                        self.wifi_status,
-                        self.wifi_ssid,
-                        self.wifi_ip,
-                    ) = self.try_wifi_connect(ssid, pwd)
-                    if self.wifi_status == "online":
-                        break
+                pwd = wlan_json[ssid]
+                debug(4, __name__, "Trying to connect to SSID:" + ssid)
+                (
+                    self.wifi_status,
+                    self.wifi_ssid,
+                    self.wifi_ip,
+                ) = self.try_wifi_connect(ssid, pwd)
+                if self.wifi_status == "online":
+                    break
             list = [self.wifi_status, self.wifi_ssid, self.wifi_ip]
             return list
             
@@ -122,9 +126,12 @@ class WifiConnect:
             ssid = self.wifi_ssid
             pwd = self.wifi_pw
         try:
+            debug(4, __name__, "WiFi debug: entering connect() for SSID: " + str(ssid))
             self.wifi.connect(ssid, pwd)
+            debug(4, __name__, "WiFi debug: connect() returned for SSID: " + str(ssid))
             timeout = 10000
             start_time = utime.ticks_ms()
+            debug(4, __name__, "WiFi debug: waiting for isconnected()")
             while not self.wifi.isconnected():
                 if utime.ticks_diff(utime.ticks_ms(), start_time) > timeout:
                     debug(4, __name__, "Connection timeout reached")
@@ -132,6 +139,7 @@ class WifiConnect:
                 machine.idle()  # Yield while waiting instead of busy-spinning.
 
             if self.wifi.isconnected():
+                debug(4, __name__, "WiFi debug: isconnected() became True")
                 self.wifi_status = "online"
                 self.wifi_ssid = ssid
                 self.wifi_pw = pwd
@@ -139,6 +147,10 @@ class WifiConnect:
                 debug(4, __name__, "Connected to " + self.wifi_ssid)
                 debug(4, __name__, " with IP address: " + self.wifi_ip)
             else:
+                try:
+                    debug(4, __name__, "WiFi debug: final status before failure: " + str(self.wifi.status()))
+                except Exception as status_error:
+                    debug(4, __name__, "WiFi debug: final status() failed: " + str(status_error))
                 raise Exception("Connection failed")
 
         except Exception as e:
